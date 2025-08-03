@@ -11,7 +11,8 @@ import SupportGroups from './pages/SupportGroups';
 import Chat from './pages/Chat';
 import Resources from './pages/Resources';
 import NotFound from './pages/NotFound';
-
+import About from './pages/About';
+import Contact from './pages/Contact';
 function App() {
   const token = localStorage.getItem('token');
 
@@ -28,6 +29,8 @@ function App() {
         <Route path="/chat" element={token ? <Chat /> : <Navigate to="/login" />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
     </Router>
   );

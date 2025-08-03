@@ -11,7 +11,7 @@ const HomeFeed = () => {
   }, []);
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ minHeight: '100vh', width: '100vw', background: '#fff', padding: '2vw' }}>
       <h2>Community Feed</h2>
       {posts.length === 0 && <p>No posts yet.</p>}
       {posts.map(post => (
