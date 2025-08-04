@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import NavBar from '../components/NavBar';
+import { useNavigate } from 'react-router-dom';
+//  import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 
 const Login = ({ onLogin }) => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
-  const [show, setShow] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
@@ -20,8 +21,10 @@ const Login = ({ onLogin }) => {
       });
       const data = await res.json();
       if (res.ok) {
-        onLogin && onLogin(data.token);
-        window.location.href = '/feed';
+        // Assume backend returns a user profile, or update your backend to do so!
+        onLogin(data.token, data.username); // store token and username
+navigate('/dashboard'); // redirect to dashboard page
+
       } else {
         setErrorMsg(data.message || 'Login failed.');
       }
@@ -32,7 +35,7 @@ const Login = ({ onLogin }) => {
 
   return (
     <div style={{ minHeight: '100vh', width: '100vw', background: 'linear-gradient(120deg,#f5f3fc,#c3e9f7 80%)', display: 'flex', flexDirection: 'column' }}>
-      <NavBar />
+      {/* NavBar can be omitted here if already included in App */}
       <main style={{
         flex: 1,
         display: 'flex',
@@ -66,32 +69,14 @@ const Login = ({ onLogin }) => {
               required
               style={{ width: '100%', marginBottom: 16, padding: 10, borderRadius: 8, border: '1px solid #cfd8dc', fontSize: 16 }}
             />
-            <div style={{ position: 'relative' }}>
-              <input
-                name="password"
-                type={show ? 'text' : 'password'}
-                placeholder="Password"
-                onChange={handleChange}
-                required
-                style={{ width: '100%', marginBottom: 16, padding: 10, borderRadius: 8, border: '1px solid #cfd8dc', fontSize: 16 }}
-              />
-              <button
-                type="button"
-                style={{
-                  position: 'absolute',
-                  right: 10,
-                  top: 13,
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#3B82F6',
-                  fontSize: 14
-                }}
-                onClick={() => setShow(!show)}
-              >
-                {show ? 'Hide' : 'Show'}
-              </button>
-            </div>
+            <input
+              name="password"
+              type="password"
+              placeholder="Password"
+              onChange={handleChange}
+              required
+              style={{ width: '100%', marginBottom: 16, padding: 10, borderRadius: 8, border: '1px solid #cfd8dc', fontSize: 16 }}
+            />
             <button
               type="submit"
               style={{

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import NavBar from '../components/NavBar';
+// import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 
 // Example dynamic content
@@ -30,7 +30,7 @@ const LandingPage = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f2f7fb', display: 'flex', flexDirection: 'column' }}>
-      <NavBar />
+      {/* <NavBar /> */}
       <main style={{
         flex: 1,
         width: '100vw',
