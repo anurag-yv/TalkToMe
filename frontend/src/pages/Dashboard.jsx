@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 const Dashboard = ({ user }) => {
@@ -7,134 +7,174 @@ const Dashboard = ({ user }) => {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingGroups, setLoadingGroups] = useState(true);
 
-  useEffect(() => {
-    fetch('/api/posts')
-      .then(res => res.json())
-      .then(data => {
-        setPosts(data.slice(0, 3));
-        setLoadingPosts(false);
-      })
-      .catch(() => setLoadingPosts(false));
+  const moods = ['😊', '😌', '😢', '🥳', '🤗', '😴', '😇'];
+  const dailyMood = useMemo(() => moods[Math.floor(Math.random() * moods.length)], []);
 
-    fetch('/api/groups')
-      .then(res => res.json())
-      .then(data => {
-        setGroups(data.slice(0, 4));
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const postsRes = await fetch('/api/posts');
+        const postsData = await postsRes.json();
+        setPosts(postsData.slice(0, 3));
+        setLoadingPosts(false);
+
+        const groupsRes = await fetch('/api/groups');
+        const groupsData = await groupsRes.json();
+        setGroups(groupsData.slice(0, 4));
         setLoadingGroups(false);
-      })
-      .catch(() => setLoadingGroups(false));
+      } catch {
+        setLoadingPosts(false);
+        setLoadingGroups(false);
+      }
+    }
+    fetchData();
   }, []);
 
-  return (
-    <div style={{
-      padding: '20px',
-      width: '100vw',
-      minHeight: '100vh',
-      backgroundColor: '#f9fafb',
-      boxSizing: 'border-box',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-    }}>
-      <h1 style={{ color: '#2563eb', fontWeight: 'bold', marginBottom: 20, width: '100%', textAlign: 'center' }}>
-        Welcome back, {user}!
-      </h1>
+  const containerStyle = {
+    padding: '20px',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    color: '#1e293b',
+    width: '100%',
+    minHeight: '100vh',
+    boxSizing: 'border-box',
+  };
 
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: 20,
-        justifyContent: 'center',
-        width: '100%',
-        maxWidth: '1400px'
-      }}>
-        {/* Quick Stats */}
-        <div style={{
-          flex: '1 1 200px',
-          background: '#e0f2fe',
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(59,130,246,0.15)',
-          minWidth: 200,
-          textAlign: 'center'
-        }}>
-          <h3 style={{ margin: 0, color: '#0284c7' }}>Posts Created</h3>
-          <p style={{ fontSize: 36, fontWeight: 700, marginTop: 8 }}>{posts.length}</p>
+  const gridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gap: '26px',
+    width: '100%',
+  };
+
+  const cardStyle = {
+    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+    padding: '20px',
+    borderRadius: '20px',
+    boxShadow: '0 8px 16px rgba(250, 204, 21, 0.3)',
+    minHeight: '280px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  };
+
+  const titleStyle = {
+    color: '#b45309',
+    marginBottom: '12px',
+    fontSize: '1.4rem',
+    fontWeight: 700,
+  };
+
+  const buttonStyle = {
+    background: 'linear-gradient(45deg, #fed7aa 0%, #fb923c 100%)',
+    padding: '12px 32px',
+    borderRadius: '30px',
+    color: '#92400e',
+    fontWeight: 700,
+    textDecoration: 'none',
+    boxShadow: '0 4px 15px 2px rgba(251, 146, 60, 0.12)',
+    userSelect: 'none',
+    border: 'none',
+    fontSize: '1rem',
+    margin: '4px 0',
+    display: 'inline-block',
+  };
+
+  return (
+    <div
+      style={{
+        background: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)',
+        minHeight: '100vh',
+        paddingTop: '30px',
+        paddingBottom: '30px',
+        width: '100vw',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={containerStyle}>
+        <h1 style={{ fontSize: '2.8rem', marginBottom: 8, textAlign: 'center', color: '#b45309' }}>
+          Welcome back, {user}! {dailyMood}
+        </h1>
+        <p style={{ textAlign: 'center', marginBottom: 36, fontSize: '1.19rem', color: '#8b5cf6', fontWeight: 500 }}>
+          Feel the warmth of community and growth as you navigate your journey.
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: 35 }}>
+          {[['Create Post', '/create'], ['Join Group', '/support-groups'], ['Chat Now', '/chat'], ['Resources', '/resources']].map(([label, to]) => (
+            <Link key={label} to={to} style={buttonStyle}>
+              {label}
+            </Link>
+          ))}
         </div>
-        <div style={{
-          flex: '1 1 200px',
-          background: '#e0f2fe',
-          padding: 20,
-          borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(59,130,246,0.15)',
-          minWidth: 200,
-          textAlign: 'center'
-        }}>
-          <h3 style={{ margin: 0, color: '#0284c7' }}>Support Groups</h3>
-          <p style={{ fontSize: 36, fontWeight: 700, marginTop: 8 }}>{groups.length}</p>
+
+        <div style={gridStyle}>
+          {/* Posts Card */}
+          <section style={cardStyle}>
+            <div>
+              <h2 style={titleStyle}>Recent Posts</h2>
+              {loadingPosts ? (
+                <p>Loading posts...</p>
+              ) : posts.length === 0 ? (
+                <p>
+                  No posts yet. <Link to="/create">Create your first post</Link>
+                </p>
+              ) : (
+                posts.map(post => (
+                  <div
+                    key={post._id}
+                    style={{
+                      marginBottom: 20,
+                      padding: 12,
+                      background: '#fffbee',
+                      borderRadius: 16,
+                      boxShadow: '0 4px 8px rgba(202,138,4,0.15)',
+                    }}
+                  >
+                    <h3 style={{ margin: '0 0 8px 0', color: '#b45309' }}>{post.title}</h3>
+                    <p style={{ color: '#92400e', marginBottom: 2 }}>{post.content.slice(0, 120)}...</p>
+                    <small style={{ color: '#92400e' }}>By {post.author?.username || 'Unknown'}</small>
+                  </div>
+                ))
+              )}
+            </div>
+            <Link to="/feed" style={{ color: '#b45309', fontWeight: '600', textDecoration: 'underline', alignSelf: 'flex-end' }}>
+              View All Posts →
+            </Link>
+          </section>
+
+          {/* Groups Card */}
+          <section style={cardStyle}>
+            <div>
+              <h2 style={titleStyle}>Support Groups</h2>
+              {loadingGroups ? (
+                <p>Loading groups...</p>
+              ) : groups.length === 0 ? (
+                <p>
+                  No groups yet. <Link to="/support-groups">Browse groups</Link>
+                </p>
+              ) : (
+                groups.map(group => (
+                  <div
+                    key={group._id}
+                    style={{
+                      marginBottom: 20,
+                      padding: 12,
+                      background: '#fffbee',
+                      borderRadius: 16,
+                      boxShadow: '0 4px 8px rgba(202,138,4,0.11)',
+                    }}
+                  >
+                    <h3 style={{ margin: '0 0 8px 0', color: '#b45309' }}>{group.name}</h3>
+                    <p style={{ color: '#92400e', marginBottom: 2 }}>{group.description.slice(0, 100)}...</p>
+                  </div>
+                ))
+              )}
+            </div>
+            <Link to="/support-groups" style={{ color: '#b45309', fontWeight: '600', textDecoration: 'underline', alignSelf: 'flex-end' }}>
+              Browse More Groups →
+            </Link>
+          </section>
         </div>
       </div>
-
-      {/* Recent Posts */}
-      <section style={{ marginTop: 40, width: '100%', maxWidth: '1400px' }}>
-        <h2 style={{ borderBottom: '2px solid #3b82f6', paddingBottom: 6, color: '#1e3a8a' }}>Recent Posts</h2>
-        {loadingPosts ? (
-          <p>Loading posts...</p>
-        ) : posts.length === 0 ? (
-          <p>No posts yet. <Link to="/create" style={{ color: '#3b82f6' }}>Create a post?</Link></p>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 20, marginTop: 20 }}>
-            {posts.map(post => (
-              <div key={post._id} style={{
-                backgroundColor: '#dbeafe',
-                borderRadius: 10,
-                padding: 15,
-                boxShadow: '0 2px 8px rgba(41,121,255,0.2)'
-              }}>
-                <h3 style={{ margin: '0 0 6px 0', color: '#2563eb' }}>{post.title}</h3>
-                <p style={{ margin: '0 0 8px 0', color: '#1e293b' }}>{post.content.slice(0, 120)}...</p>
-                <small style={{ color: '#475569' }}>By {post.author?.username || 'Unknown'}</small>
-              </div>
-            ))}
-          </div>
-        )}
-        <Link to="/feed" style={{ marginTop: 15, display: 'inline-block', color: '#3b82f6', fontWeight: 600 }}>
-          View All Posts &rarr;
-        </Link>
-      </section>
-
-      {/* Support Groups */}
-      <section style={{ marginTop: 40, width: '100%', maxWidth: '1400px' }}>
-        <h2 style={{ borderBottom: '2px solid #3b82f6', paddingBottom: 6, color: '#1e3a8a' }}>Your Support Groups</h2>
-        {loadingGroups ? (
-          <p>Loading groups...</p>
-        ) : groups.length === 0 ? (
-          <p>You haven’t joined any groups yet. <Link to="/support-groups" style={{ color: '#3b82f6' }}>Browse groups</Link></p>
-        ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))',
-            gap: 20,
-            marginTop: 16
-          }}>
-            {groups.map(group => (
-              <div key={group._id} style={{
-                backgroundColor: '#bfdbfe',
-                padding: 16,
-                borderRadius: 12,
-                boxShadow: '0 1px 8px rgba(41,121,255,0.25)',
-                minHeight: 130
-              }}>
-                <h4 style={{ marginTop: 0, color: '#1e40af' }}>{group.name}</h4>
-                <p style={{ color: '#374151' }}>{group.description.slice(0, 100)}...</p>
-              </div>
-            ))}
-          </div>
-        )}
-        <Link to="/support-groups" style={{ marginTop: 12, display: 'inline-block', color: '#3b82f6', fontWeight: 600 }}>
-          Browse More Groups &rarr;
-        </Link>
-      </section>
     </div>
   );
 };

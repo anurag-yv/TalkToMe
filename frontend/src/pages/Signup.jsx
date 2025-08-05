@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import NavBar from '../components/NavBar';
+// import NavBar from '../components/NavBar';
 import Footer from '../components/Footer';
 
 const motivationalQuotes = [
@@ -43,7 +43,7 @@ const Signup = () => {
 
   return (
     <div style={{ minHeight: '100vh', width: '100vw', background: 'linear-gradient(120deg,#c3e9f7,#f5f3fc 80%)', display: 'flex', flexDirection: 'column' }}>
-      <NavBar />
+      {/* <NavBar /> */}
       <main style={{
         flex: 1,
         display: 'flex',
