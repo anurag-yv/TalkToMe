@@ -10,154 +10,244 @@ const animeColors = {
   inputTextColor: '#5b21b6',
   buttonBackground: '#c084fc',
   buttonHoverBackground: '#a855f7',
+  headerBackground: 'rgba(147, 51, 234, 0.85)',
+  headerText: '#fff',
+  borderColor: '#a78bfa',
 };
+
+function formatTime(date) {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
 const Chat = () => {
   const [messages, setMessages] = useState([
-    { user: 'Alice', text: 'Hi, anyone here?' },
-    { user: 'Bob', text: 'Yes, you are not alone :)' },
+    { user: 'Alice', text: 'Hi, anyone here?', time: new Date() },
+    { user: 'Bob', text: 'Yes, you are not alone :)', time: new Date() },
   ]);
   const [msg, setMsg] = useState('');
   const messagesEndRef = useRef(null);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
+    // Scroll to bottom smoothly on new messages
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  const sendMessage = e => {
+  const sendMessage = (e) => {
     e.preventDefault();
     if (!msg.trim()) return;
-    setMessages([...messages, { user: 'You', text: msg.trim() }]);
+
+    setMessages((prev) => [
+      ...prev,
+      { user: 'You', text: msg.trim(), time: new Date() },
+    ]);
     setMsg('');
-    // Real implementation would send to backend or websocket
+  };
+
+  const clearChat = () => {
+    setMessages([]);
   };
 
   return (
     <div
       style={{
-        height: '100vh',          // full viewport height
-        maxWidth: 700,            // max width for readability
-        margin: '0 auto',         // center horizontally
-        padding: 20,
-        background: animeColors.background,
-        fontFamily: "'Comic Sans MS', cursive, sans-serif",
+        height: '100vh',
+        width: '100vw',
         display: 'flex',
         flexDirection: 'column',
+        background: animeColors.background,
+        fontFamily: "'Comic Sans MS', cursive, sans-serif",
+        color: animeColors.textColorOther,
         boxSizing: 'border-box',
       }}
-      aria-label="Chat Room"
-      role="region"
+      aria-label="Chat Application"
     >
-      <h2 style={{ textAlign: 'center', marginBottom: 24, color: animeColors.textColorYou, fontWeight: 'bold' }}>
-        Chat Room
-      </h2>
-
-      <div
+      {/* Header */}
+      <header
         style={{
-          flex: 1,                 // fill available vertical space for scroll
+          backgroundColor: animeColors.headerBackground,
+          color: animeColors.headerText,
+          padding: '16px 24px',
+          fontWeight: 'bold',
+          fontSize: 22,
+          textAlign: 'center',
+          userSelect: 'none',
+          boxShadow: '0 2px 8px rgba(168,85,247,0.6)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        💬 Playful Chat Room
+      </header>
+
+      {/* Message List */}
+      <main
+        style={{
+          flex: 1,
           overflowY: 'auto',
-          padding: 16,
-          borderRadius: 16,
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          boxShadow: '0 4px 15px rgba(140, 85, 255, 0.2)',
-          border: '2px solid #c084fc',
-          marginBottom: 15,
+          padding: '16px 24px',
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
-          wordBreak: 'break-word',
+          scrollBehavior: 'smooth',
         }}
         tabIndex={0}
+        aria-live="polite"
+        aria-relevant="additions"
+        role="list"
       >
-        {messages.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#6b7280' }}>No messages yet. Say Hi!</p>
-        ) : (
-          messages.map((m, i) => {
-            const isYou = m.user === 'You';
-            return (
-              <div
-                key={i}
-                style={{
-                  maxWidth: '80%',
-                  alignSelf: isYou ? 'flex-end' : 'flex-start',
-                  backgroundColor: isYou ? animeColors.chatBubbleYou : animeColors.chatBubbleOther,
-                  color: isYou ? animeColors.textColorYou : animeColors.textColorOther,
-                  padding: '10px 14px',
-                  borderRadius: 20,
-                  borderTopRightRadius: isYou ? 4 : 20,
-                  borderTopLeftRadius: isYou ? 20 : 4,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                  fontSize: 16,
-                  lineHeight: 1.3,
-                  wordBreak: 'break-word',
-                  whiteSpace: 'pre-wrap',
-                }}
-                aria-label={`${m.user} says: ${m.text}`}
-              >
-                <strong>{m.user}:</strong> {m.text}
-              </div>
-            );
-          })
+        {messages.length === 0 && (
+          <p style={{ textAlign: 'center', color: '#6b7280', marginTop: 40 }}>
+            No messages yet — say hello! 👋
+          </p>
         )}
+        {messages.map((m, i) => {
+          const isYou = m.user === 'You';
+          return (
+            <article
+              key={i}
+              role="listitem"
+              aria-label={`${m.user} at ${formatTime(m.time)}`}
+              style={{
+                maxWidth: '75%',
+                alignSelf: isYou ? 'flex-end' : 'flex-start',
+                backgroundColor: isYou
+                  ? animeColors.chatBubbleYou
+                  : animeColors.chatBubbleOther,
+                color: isYou ? animeColors.textColorYou : animeColors.textColorOther,
+                padding: '12px 18px',
+                borderRadius: 20,
+                borderTopRightRadius: isYou ? 6 : 20,
+                borderTopLeftRadius: isYou ? 20 : 6,
+                boxShadow: '0 2px 7px rgba(0,0,0,0.08)',
+                fontSize: 16,
+                lineHeight: 1.35,
+                whiteSpace: 'pre-wrap',
+                userSelect: 'text',
+                animation: 'fadeIn 0.3s ease',
+              }}
+            >
+              <div>
+                <strong>{m.user}:</strong>
+              </div>
+              <div>{m.text}</div>
+              <time
+                dateTime={m.time.toISOString()}
+                style={{
+                  display: 'block',
+                  fontSize: 12,
+                  color: isYou ? '#702963' : '#3b3b6e',
+                  marginTop: 4,
+                  fontStyle: 'italic',
+                }}
+              >
+                {formatTime(m.time)}
+              </time>
+            </article>
+          );
+        })}
         <div ref={messagesEndRef} />
-      </div>
+      </main>
 
-      <form
-        onSubmit={sendMessage}
+      {/* Input and Controls */}
+      <footer
         style={{
-          display: 'flex',
-          gap: 10,
-          alignItems: 'center',
-          borderRadius: 30,
+          padding: '12px 24px',
           backgroundColor: animeColors.inputBackground,
-          boxShadow: '0 2px 10px rgba(197, 140, 253, 0.4)',
-          padding: '10px 16px',
-          border: '1.5px solid #d8b4fe',
+          boxShadow: '0 -2px 12px rgba(197, 140, 253, 0.4)',
+          display: 'flex',
+          gap: 12,
+          alignItems: 'center',
+          borderTop: `2px solid ${animeColors.borderColor}`,
+          zIndex: 10,
         }}
-        aria-label="Send message form"
       >
-        <input
-          type="text"
-          value={msg}
-          onChange={e => setMsg(e.target.value)}
-          placeholder="Type your message..."
-          required
-          aria-required="true"
-          style={{
-            flex: 1,
-            outline: 'none',
-            border: 'none',
-            backgroundColor: 'transparent',
-            color: animeColors.inputTextColor,
-            fontSize: 16,
-            fontWeight: '600',
-            wordBreak: 'break-word',
-          }}
-        />
+        <form
+          onSubmit={sendMessage}
+          style={{ flex: 1, display: 'flex', gap: 12 }}
+          aria-label="Send message form"
+        >
+          <input
+            type="text"
+            aria-required="true"
+            aria-label="Message input field"
+            placeholder="Type your message..."
+            value={msg}
+            onChange={(e) => setMsg(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              borderRadius: 25,
+              border: `1.5px solid ${animeColors.borderColor}`,
+              outline: 'none',
+              fontSize: 16,
+              fontWeight: '600',
+              color: animeColors.inputTextColor,
+              boxShadow: 'inset 0 2px 6px rgba(197,140,253,0.3)',
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!msg.trim()}
+            style={{
+              backgroundColor: msg.trim()
+                ? animeColors.buttonBackground
+                : '#cbb9ee',
+              color: 'white',
+              border: 'none',
+              padding: '12px 26px',
+              borderRadius: 25,
+              fontWeight: '700',
+              fontSize: 16,
+              cursor: msg.trim() ? 'pointer' : 'not-allowed',
+              userSelect: 'none',
+              transition: 'background-color 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!e.currentTarget.disabled)
+                e.currentTarget.style.backgroundColor = animeColors.buttonHoverBackground;
+            }}
+            onMouseLeave={(e) => {
+              if (!e.currentTarget.disabled)
+                e.currentTarget.style.backgroundColor = animeColors.buttonBackground;
+            }}
+          >
+            Send
+          </button>
+        </form>
         <button
-          type="submit"
+          onClick={clearChat}
+          aria-label="Clear chat"
+          title="Clear chat"
           style={{
-            backgroundColor: animeColors.buttonBackground,
-            color: 'white',
+            backgroundColor: '#e879f9',
             border: 'none',
-            padding: '10px 22px',
+            color: 'white',
+            padding: '12px 16px',
             borderRadius: 25,
             fontWeight: '700',
             fontSize: 16,
             cursor: 'pointer',
             userSelect: 'none',
             transition: 'background-color 0.3s ease',
+            whiteSpace: 'nowrap',
           }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = animeColors.buttonHoverBackground)}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = animeColors.buttonBackground)}
-          aria-label="Send message"
+          onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#c241f5')}
+          onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#e879f9')}
         >
-          Send
+          Clear
         </button>
-      </form>
+      </footer>
+
+      {/* Animation */}
+      <style>{`
+        @keyframes fadeIn {
+          from {opacity: 0; transform: translateY(8px);}
+          to {opacity: 1; transform: translateY(0);}
+        }
+      `}</style>
     </div>
   );
 };
