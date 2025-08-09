@@ -58,6 +58,7 @@ function App() {
         <Route path="/support-groups" element={token ? <SupportGroups /> : <Navigate to="/login" />} />
         <Route path="/chat" element={token ? <Chat /> : <Navigate to="/login" />} />
         <Route path="/dashboard" element={token ? <Dashboard user={user} /> : <Navigate to="/login" />} />
+       
 
         {/* Catch-all for unknown routes */}
         <Route path="*" element={<NotFound />} />

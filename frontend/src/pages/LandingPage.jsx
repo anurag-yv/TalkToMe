@@ -1,77 +1,160 @@
-import React, { useState, useEffect } from 'react';
-// import NavBar from '../components/NavBar';
-import Footer from '../components/Footer';
+import React, { useState, useEffect, useRef } from "react";
+import Footer from "../components/Footer";
 
-// Example dynamic content
 const taglines = [
-  "Connecting Hearts, Changing Lives.",
-  "You're Never Alone at Talk.",
-  "A Safe Place to Share and Support."
+  "Connect. Share. Grow.",
+  "Talk. Listen. Belong.",
+  "A safe space to meet new voices."
 ];
 
 const quotes = [
-  "“You are stronger than you think.”",
-  "“It’s okay to ask for help.”",
-  "“Every story matters, including yours.”"
+  '"Every conversation starts with hello."',
+  '"Sometimes, a simple chat can change everything."',
+  '"You’re one hello away from something new."',
 ];
 
 const LandingPage = () => {
   const [tagline, setTagline] = useState(taglines[0]);
   const [quote, setQuote] = useState(quotes[0]);
+  const [fade, setFade] = useState(true);
 
+  // Rotate tagline/quote
   useEffect(() => {
-    // Change tagline and quote every 5 seconds
     const interval = setInterval(() => {
-      setTagline(taglines[Math.floor(Math.random() * taglines.length)]);
-      setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-    }, 5000);
+      setFade(false);
+      setTimeout(() => {
+        setTagline(taglines[Math.floor(Math.random() * taglines.length)]);
+        setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+        setFade(true);
+      }, 450);
+    }, 8000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f2f7fb', display: 'flex', flexDirection: 'column' }}>
-      {/* <NavBar /> */}
-      <main style={{
-        flex: 1,
-        width: '100vw',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <h1 style={{ fontSize: 52, fontWeight: 800, color: '#3B82F6', marginBottom: 8, width: '100%', textAlign: 'center' }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        width: "100vw",
+        background:
+          "linear-gradient(110deg, #ece9f7 0%, #e0f7fa 100%)",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <main
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "36px 20px",
+          maxWidth: "520px",
+          margin: "auto",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: 44,
+            fontWeight: 800,
+            color: "#344055",
+            marginBottom: 10,
+            textAlign: "center",
+            letterSpacing: 1,
+          }}
+        >
           Welcome to Talk
         </h1>
-        <h2 style={{
-          color: '#333',
-          fontSize: 32,
-          textAlign: 'center',
-          marginBottom: 16,
-          transition: 'all 0.5s'
-        }}>
+
+        <h2
+          style={{
+            color: "#5855a5",
+            fontSize: 22,
+            marginBottom: 14,
+            opacity: fade ? 1 : 0,
+            transition: "opacity .45s",
+            textAlign: "center",
+            fontWeight: 500,
+          }}
+        >
           {tagline}
         </h2>
-        <span style={{
-          fontSize: 20, color: '#666', fontStyle: 'italic', marginBottom: 25,
-          display: 'block', textAlign: 'center', minHeight: 32
-        }}>
+
+        <div
+          style={{
+            padding: "12px 18px",
+            background: "#fff",
+            borderRadius: 12,
+            boxShadow: "0 2px 12px rgba(100,100,140,0.08)",
+            maxWidth: 380,
+            marginBottom: 28,
+            fontSize: 16,
+            color: "#444",
+            fontStyle: "italic",
+            textAlign: "center",
+            opacity: fade ? 1 : 0,
+            transition: "opacity .45s",
+          }}
+        >
           {quote}
-        </span>
-        <a href="/signup" style={{
-          display: 'inline-block',
-          background: 'linear-gradient(90deg,#3B82F6 50%,#64748B 100%)',
-          color: '#fff',
-          padding: '16px 38px',
-          borderRadius: 60,
-          fontWeight: 700,
-          fontSize: 22,
-          letterSpacing: 1,
-          boxShadow: '0 2px 8px rgba(80,120,200,0.15)',
-          textDecoration: 'none',
-          marginTop: 18
+        </div>
+
+        {/* Optional doodle pad or visual */}
+        <div style={{
+          marginBottom: 18,
+          textAlign: "center",
+          color: "#999",
+          fontSize: 15,
         }}>
-          Join the Community
-        </a>
+          <span>Welcome, guest! To take part, simply <b>sign up</b> or <b>log in</b> below.</span>
+        </div>
+
+        <div style={{
+          display: "flex",
+          gap: 18,
+          marginTop: 18,
+          flexWrap: "wrap",
+        }}>
+          <a
+            href="/signup"
+            style={{
+              background: "linear-gradient(90deg,#6c77f9,#6cd7c7)",
+              color: "#fff",
+              padding: "13px 34px",
+              borderRadius: 35,
+              fontWeight: 700,
+              fontSize: 18,
+              letterSpacing: 1,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+              textDecoration: "none",
+              transition: "transform 0.2s",
+            }}
+            onMouseEnter={e => (e.target.style.transform = "scale(1.05)")}
+            onMouseLeave={e => (e.target.style.transform = "scale(1)")}
+          >
+            Join Now
+          </a>
+          <a
+            href="/login"
+            style={{
+              background: "#fff",
+              color: "#5855a5",
+              border: "2px solid #a7b0f5",
+              padding: "13px 34px",
+              borderRadius: 35,
+              fontWeight: 700,
+              fontSize: 18,
+              boxShadow: "0 2px 10px rgba(100,130,160,0.05)",
+              textDecoration: "none",
+              transition: "transform 0.2s",
+            }}
+            onMouseEnter={e => (e.target.style.transform = "scale(1.05)")}
+            onMouseLeave={e => (e.target.style.transform = "scale(1)")}
+          >
+            Log In
+          </a>
+        </div>
       </main>
       <Footer />
     </div>
