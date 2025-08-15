@@ -45,43 +45,107 @@ export default function Chat() {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h2>💬 Bitcoin Chat</h2>
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "linear-gradient(135deg, #74ABE2, #5563DE)",
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        color: "#fff",
+      }}
+    >
+      {/* Header */}
+      <header
+        style={{
+          padding: "15px",
+          background: "rgba(0,0,0,0.2)",
+          textAlign: "center",
+          fontSize: "1.5rem",
+          fontWeight: "bold",
+          letterSpacing: "1px",
+        }}
+      >
+        💬 Bitcoin Chat
+      </header>
+
+      {/* Messages Area */}
       <div
         style={{
-          border: "1px solid #ccc",
+          flex: 1,
+          overflowY: "auto",
           padding: "10px",
-          height: "300px",
-          overflowY: "scroll",
-          marginBottom: "10px",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {messages.map((msg, index) => (
           <div
             key={index}
             style={{
+              alignSelf: msg.id === socket.id ? "flex-end" : "flex-start",
               background:
-                msg.id === "bot" ? "#f1f1f1" : msg.id === socket.id ? "#d1f7c4" : "#fff",
-              padding: "5px",
-              margin: "5px 0",
-              borderRadius: "5px",
+                msg.id === "bot"
+                  ? "rgba(255, 255, 255, 0.2)"
+                  : msg.id === socket.id
+                  ? "rgba(0, 255, 150, 0.3)"
+                  : "rgba(255, 255, 255, 0.1)",
+              padding: "8px 12px",
+              margin: "5px",
+              borderRadius: "12px",
+              maxWidth: "75%",
+              wordBreak: "break-word",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
             }}
           >
-            <strong>{msg.username}:</strong> {msg.message}
+            <strong style={{ color: "#FFD700" }}>{msg.username}:</strong>{" "}
+            {msg.message}
           </div>
         ))}
       </div>
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Type a message..."
-        style={{ padding: "5px", width: "80%" }}
-      />
-      <button onClick={sendMessage} style={{ padding: "5px 10px" }}>
-        Send
-      </button>
+
+      {/* Input Area */}
+      <div
+        style={{
+          display: "flex",
+          padding: "10px",
+          background: "rgba(0,0,0,0.2)",
+        }}
+      >
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type a message..."
+          style={{
+            flex: 1,
+            padding: "10px",
+            borderRadius: "20px",
+            border: "none",
+            outline: "none",
+            fontSize: "1rem",
+          }}
+        />
+        <button
+          onClick={sendMessage}
+          style={{
+            padding: "10px 16px",
+            marginLeft: "8px",
+            border: "none",
+            borderRadius: "20px",
+            background: "#FFD700",
+            color: "#000",
+            fontWeight: "bold",
+            cursor: "pointer",
+            transition: "transform 0.2s",
+          }}
+          onMouseDown={(e) => (e.target.style.transform = "scale(0.95)")}
+          onMouseUp={(e) => (e.target.style.transform = "scale(1)")}
+        >
+          Send
+        </button>
+      </div>
     </div>
   );
 }
