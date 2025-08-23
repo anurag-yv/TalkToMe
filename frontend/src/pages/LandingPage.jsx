@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Footer from "../components/Footer";
 
 const taglines = [
-  "Connect. Share. Grow.",
-  "Talk. Listen. Belong.",
-  "A safe space to meet new voices."
+  "Find voices that feel like home.",
+  "Conversations that light up the dark.",
+  "You’re never really alone here.",
 ];
 
 const quotes = [
-  '"Every conversation starts with hello."',
-  '"Sometimes, a simple chat can change everything."',
-  '"You’re one hello away from something new."',
+  '"Every hello plants a seed of connection."',
+  '"Loneliness fades when stories are shared."',
+  '"Strangers today, companions tomorrow."',
 ];
 
 const LandingPage = () => {
@@ -18,7 +18,6 @@ const LandingPage = () => {
   const [quote, setQuote] = useState(quotes[0]);
   const [fade, setFade] = useState(true);
 
-  // Rotate tagline/quote
   useEffect(() => {
     const interval = setInterval(() => {
       setFade(false);
@@ -27,21 +26,73 @@ const LandingPage = () => {
         setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
         setFade(true);
       }, 450);
-    }, 8000);
+    }, 7000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100vh", // lock viewport height
         width: "100vw",
         background:
-          "linear-gradient(110deg, #ece9f7 0%, #e0f7fa 100%)",
+          "linear-gradient(120deg, #a1c4fd, #c2e9fb, #fbc2eb, #a6c0fe)",
+        backgroundSize: "400% 400%",
+        animation: "gradientShift 18s ease infinite",
         display: "flex",
         flexDirection: "column",
+        justifyContent: "space-between", // ✅ keeps footer at bottom
+        alignItems: "center",
+        overflow: "hidden", // ✅ no scroll
       }}
     >
+      <style>
+        {`
+          @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+
+          @keyframes floaty {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+          }
+        `}
+      </style>
+
+      {/* Floating blobs */}
+      <div
+        style={{
+          position: "absolute",
+          top: "15%",
+          left: "8%",
+          width: 120,
+          height: 120,
+          background: "rgba(255,255,255,0.25)",
+          borderRadius: "50%",
+          filter: "blur(20px)",
+          animation: "floaty 9s ease-in-out infinite",
+          zIndex: 1,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          bottom: "15%",
+          right: "12%",
+          width: 180,
+          height: 130,
+          background: "rgba(255,255,255,0.18)",
+          borderRadius: "50%",
+          filter: "blur(30px)",
+          animation: "floaty 11s ease-in-out infinite",
+          zIndex: 1,
+        }}
+      />
+
+      {/* Hero Section */}
       <main
         style={{
           flex: 1,
@@ -49,33 +100,35 @@ const LandingPage = () => {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          padding: "36px 20px",
-          maxWidth: "520px",
-          margin: "auto",
+          padding: "20px",
+          textAlign: "center",
+          position: "relative",
+          zIndex: 2,
+          maxWidth: "90%", // responsive
         }}
       >
         <h1
           style={{
-            fontSize: 44,
-            fontWeight: 800,
-            color: "#344055",
-            marginBottom: 10,
-            textAlign: "center",
-            letterSpacing: 1,
+            fontSize: "clamp(2rem, 6vw, 3.5rem)",
+            fontWeight: 900,
+            color: "#fff",
+            marginBottom: 12,
+            textShadow: "0px 4px 16px rgba(0,0,0,0.25)",
           }}
         >
-          Welcome to Talk
+          Welcome to Solar
         </h1>
 
         <h2
           style={{
-            color: "#5855a5",
-            fontSize: 22,
+            color: "#fff",
+            fontSize: "clamp(1rem, 3vw, 1.5rem)",
             marginBottom: 14,
             opacity: fade ? 1 : 0,
-            transition: "opacity .45s",
-            textAlign: "center",
+            transform: fade ? "scale(1)" : "scale(0.95)",
+            transition: "all .45s ease",
             fontWeight: 500,
+            textShadow: "0px 2px 10px rgba(0,0,0,0.25)",
           }}
         >
           {tagline}
@@ -84,79 +137,88 @@ const LandingPage = () => {
         <div
           style={{
             padding: "12px 18px",
-            background: "#fff",
-            borderRadius: 12,
-            boxShadow: "0 2px 12px rgba(100,100,140,0.08)",
+            background: "rgba(255,255,255,0.9)",
+            borderRadius: 14,
+            boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
             maxWidth: 380,
-            marginBottom: 28,
-            fontSize: 16,
+            marginBottom: 20,
+            fontSize: "clamp(0.85rem, 2vw, 1rem)",
             color: "#444",
             fontStyle: "italic",
-            textAlign: "center",
             opacity: fade ? 1 : 0,
-            transition: "opacity .45s",
+            transform: fade ? "translateY(0)" : "translateY(15px)",
+            transition: "all .45s ease",
           }}
         >
           {quote}
         </div>
 
-        {/* Optional doodle pad or visual */}
-        <div style={{
-          marginBottom: 18,
-          textAlign: "center",
-          color: "#999",
-          fontSize: 15,
-        }}>
-          <span>Welcome, guest! To take part, simply <b>sign up</b> or <b>log in</b> below.</span>
-        </div>
+        <p
+          style={{
+            marginBottom: 18,
+            color: "#fff",
+            fontSize: "clamp(0.8rem, 2vw, 1rem)",
+            textShadow: "0px 2px 6px rgba(0,0,0,0.25)",
+          }}
+        >
+          Join conversations, make friends, and share stories — you belong here.
+        </p>
 
-        <div style={{
-          display: "flex",
-          gap: 18,
-          marginTop: 18,
-          flexWrap: "wrap",
-        }}>
+        {/* Buttons */}
+        <div
+          style={{
+            display: "flex",
+            gap: 14,
+            marginTop: 8,
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
+        >
           <a
             href="/signup"
             style={{
               background: "linear-gradient(90deg,#6c77f9,#6cd7c7)",
               color: "#fff",
-              padding: "13px 34px",
-              borderRadius: 35,
+              padding: "12px 28px",
+              borderRadius: 30,
               fontWeight: 700,
-              fontSize: 18,
+              fontSize: "clamp(0.9rem, 2vw, 1rem)",
               letterSpacing: 1,
-              boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+              boxShadow: "0 6px 14px rgba(0,0,0,0.25)",
               textDecoration: "none",
-              transition: "transform 0.2s",
+              transition: "transform 0.25s ease",
             }}
-            onMouseEnter={e => (e.target.style.transform = "scale(1.05)")}
-            onMouseLeave={e => (e.target.style.transform = "scale(1)")}
+            onMouseEnter={(e) => (e.target.style.transform = "scale(1.08)")}
+            onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
           >
             Join Now
           </a>
           <a
             href="/login"
             style={{
-              background: "#fff",
+              background: "rgba(255,255,255,0.95)",
               color: "#5855a5",
               border: "2px solid #a7b0f5",
-              padding: "13px 34px",
-              borderRadius: 35,
+              padding: "12px 28px",
+              borderRadius: 30,
               fontWeight: 700,
-              fontSize: 18,
-              boxShadow: "0 2px 10px rgba(100,130,160,0.05)",
+              fontSize: "clamp(0.9rem, 2vw, 1rem)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
               textDecoration: "none",
-              transition: "transform 0.2s",
+              transition: "transform 0.25s ease",
             }}
-            onMouseEnter={e => (e.target.style.transform = "scale(1.05)")}
-            onMouseLeave={e => (e.target.style.transform = "scale(1)")}
+            onMouseEnter={(e) => (e.target.style.transform = "scale(1.08)")}
+            onMouseLeave={(e) => (e.target.style.transform = "scale(1)")}
           >
             Log In
           </a>
         </div>
       </main>
-      <Footer />
+
+      {/* Footer fixed at bottom without causing scroll */}
+      <div style={{ flexShrink: 0, width: "100%" }}>
+        <Footer />
+      </div>
     </div>
   );
 };

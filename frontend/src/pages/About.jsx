@@ -4,7 +4,7 @@ import Footer from '../components/Footer';
 
 const About = () => (
   <div>
-    <NavBar />
+
     <main style={{
       minHeight: '70vh',
       display: 'flex',
