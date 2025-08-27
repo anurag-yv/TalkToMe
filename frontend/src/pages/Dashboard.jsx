@@ -1,15 +1,23 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { io } from "socket.io-client";
 
-const SOCKET_SERVER_URL = "http://localhost:5000"; // make sure this matches backend
+const SOCKET_SERVER_URL = "http://localhost:5000";
+
+const fadeUpAnimation = {
+  animationName: "fadeUp",
+  animationDuration: "0.9s",
+  animationTimingFunction: "ease-out",
+  animationFillMode: "forwards",
+  opacity: 0,
+  transform: "translateY(25px)",
+};
 
 const Dashboard = ({ user }) => {
   const [posts, setPosts] = useState([]);
   const [groups, setGroups] = useState([]);
   const [stats, setStats] = useState({ posts: 0, groups: 0, members: 0, activeToday: 0 });
   const [loadingPosts, setLoadingPosts] = useState(true);
-  const [selectedMood, setSelectedMood] = useState(null);
   const [chatMessages, setChatMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [quote, setQuote] = useState("");
@@ -17,40 +25,47 @@ const Dashboard = ({ user }) => {
   const [gratitudeNote, setGratitudeNote] = useState("");
   const [gratitudeWall, setGratitudeWall] = useState([]);
   const [creativePrompt, setCreativePrompt] = useState("");
-  const [petMood, setPetMood] = useState("happy");
+  const [petMood, setPetMood] = useState("happy 🐶");
   const [playlistSongs, setPlaylistSongs] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
 
-  const moods = ["😊 Happy", "😌 Calm", "😢 Reflective", "🥳 Excited", "🤗 Warm", "😴 Chill", "😇 Hopeful"];
-  const dailyMood = useMemo(() => moods[Math.floor(Math.random() * moods.length)].split(" ")[0], []);
-
-  // Fun facts, challenges, quotes, creative prompts, and pet interactions
   const funFacts = [
-    "💡 Did you know? Honey never spoils.",
-    "🐬 Dolphins have names for each other!",
-    "🌱 Bamboo can grow up to 3 feet in one day.",
-    "🌕 There's no sound in space."
+    "Did you know? Honey never spoils.",
+    "Dolphins have names for each other!",
+    "Bamboo can grow up to 3 feet in one day.",
+    "There's no sound in space.",
   ];
   const challenges = [
-    "📸 Share a picture of something blue in chat.",
-    "✍️ Post your favorite quote.",
-    "🎶 Recommend a song to the community.",
-    "😂 Tell a one-line joke."
+    "Share a picture of something blue in chat.",
+    "Post your favorite quote.",
+    "Recommend a song to the community.",
+    "Tell a one-line joke.",
   ];
   const quotes = [
     "The best way to find yourself is to lose yourself in the service of others. – Mahatma Gandhi",
     "You are never too old to set another goal or to dream a new dream. – C.S. Lewis",
     "The only way to do great work is to love what you do. – Steve Jobs",
-    "We rise by lifting others. – Robert Ingersoll"
+    "We rise by lifting others. – Robert Ingersoll",
   ];
   const creativePrompts = [
     "Sketch a dream destination you'd love to visit.",
     "Write a 3-sentence story about a magical encounter.",
     "Imagine a new holiday and describe how you'd celebrate it.",
-    "Design a superhero inspired by your favorite hobby."
+    "Design a superhero inspired by your favorite hobby.",
   ];
   const petMoods = ["happy 🐶", "playful 🐾", "cozy 😺", "curious 🐰"];
+
   const [funFact, setFunFact] = useState(funFacts[0]);
   const [challenge, setChallenge] = useState(challenges[0]);
+
+  const petMoodTimeoutRef = useRef(null);
+
+  const playClickSound = () => {
+    const audio = new Audio(
+      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAACAgICAgICAgICAgICAgICAg"
+    );
+    audio.play();
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -63,32 +78,41 @@ const Dashboard = ({ user }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch posts, groups, stats, spotlight user, gratitude wall, and playlist
+  useEffect(() => {
+    if (petMoodTimeoutRef.current) clearTimeout(petMoodTimeoutRef.current);
+    petMoodTimeoutRef.current = setTimeout(() => {
+      setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]);
+    }, 10000);
+    return () => clearTimeout(petMoodTimeoutRef.current);
+  }, [petMood]);
+
   useEffect(() => {
     async function fetchData() {
       try {
-        const postsRes = await fetch("/api/posts");
+        const [postsRes, groupsRes, statsRes, spotlightRes, gratitudeRes, playlistRes] = await Promise.all([
+          fetch("/api/posts"),
+          fetch("/api/groups"),
+          fetch("/api/stats"),
+          fetch("/api/users/random"),
+          fetch("/api/gratitude"),
+          fetch("/api/playlist"),
+        ]);
         const postsData = await postsRes.json();
         setPosts(postsData.slice(0, 3));
         setLoadingPosts(false);
 
-        const groupsRes = await fetch("/api/groups");
         const groupsData = await groupsRes.json();
         setGroups(groupsData.slice(0, 4));
 
-        const statsRes = await fetch("/api/stats");
         const statsData = await statsRes.json();
         setStats(statsData);
 
-        const spotlightRes = await fetch("/api/users/random");
         const spotlightData = await spotlightRes.json();
         setSpotlightUser(spotlightData);
 
-        const gratitudeRes = await fetch("/api/gratitude");
         const gratitudeData = await gratitudeRes.json();
         setGratitudeWall(gratitudeData.slice(0, 3));
 
-        const playlistRes = await fetch("/api/playlist");
         const playlistData = await playlistRes.json();
         setPlaylistSongs(playlistData.slice(0, 3));
       } catch {
@@ -98,13 +122,12 @@ const Dashboard = ({ user }) => {
     fetchData();
   }, []);
 
-  // Real-time live stats, chat, and gratitude wall via websocket
   useEffect(() => {
     const socket = io(SOCKET_SERVER_URL, {
-      transports: ['websocket'],
+      transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 2000
+      reconnectionDelay: 2000,
     });
 
     socket.on("connect", () => {
@@ -130,16 +153,23 @@ const Dashboard = ({ user }) => {
     return () => socket.disconnect();
   }, []);
 
-  // Handle sending chat message
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
+    setIsTyping(false);
     const socket = io(SOCKET_SERVER_URL);
     socket.emit("sendChatMessage", { user: user.username, content: newMessage });
     setNewMessage("");
+    playClickSound();
   };
 
-  // Handle delete post
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+    if (!isTyping) setIsTyping(true);
+    if (handleInputChange.timeout) clearTimeout(handleInputChange.timeout);
+    handleInputChange.timeout = setTimeout(() => setIsTyping(false), 1500);
+  };
+
   const handleDeletePost = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
@@ -147,42 +177,34 @@ const Dashboard = ({ user }) => {
       const res = await fetch(`/api/posts/${postId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) throw new Error("Failed to delete post");
       setPosts((prev) => prev.filter((post) => post._id !== postId));
+      playClickSound();
     } catch (err) {
       alert(err.message || "Error deleting post");
     }
   };
 
-  // Handle mood selection
-  const handleMoodSelect = (mood) => {
-    setSelectedMood(mood);
-    fetch("/api/user/mood", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mood: mood.split(" ")[0] })
-    });
-  };
-
-  // Handle gratitude note submission
   const handleGratitudeSubmit = (e) => {
     e.preventDefault();
     if (!gratitudeNote.trim()) return;
     const socket = io(SOCKET_SERVER_URL);
     socket.emit("newGratitudeNote", { user: user.username, content: gratitudeNote });
     setGratitudeNote("");
+    playClickSound();
   };
 
-  // Handle pet interaction
   const handlePetInteraction = () => {
-    setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]);
-    alert(`Your virtual pet is feeling ${petMood}! Give it some love!`);
+    playClickSound();
+    setPetMood("❤️ Loving ❤️");
+    setTimeout(() => {
+      setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]);
+    }, 3000);
   };
 
-  // Handle adding song to playlist
   const handleAddSong = (e) => {
     e.preventDefault();
     const songInput = e.target.elements.song.value;
@@ -190,365 +212,562 @@ const Dashboard = ({ user }) => {
     fetch("/api/playlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ song: songInput, user: user.username })
+      body: JSON.stringify({ song: songInput, user: user.username }),
     }).then(() => {
       setPlaylistSongs((prev) => [...prev, { song: songInput, user: user.username }].slice(-3));
       e.target.reset();
+      playClickSound();
     });
   };
 
-  // Styles
+  const surpriseAll = () => {
+    playClickSound();
+    setFunFact(funFacts[Math.floor(Math.random() * funFacts.length)]);
+    setChallenge(challenges[Math.floor(Math.random() * challenges.length)]);
+    setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+    setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)]);
+    setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]);
+  };
+
+  // Style objects with animations and larger sizes for engagement
+
   const containerStyle = {
     minHeight: "100vh",
     width: "100vw",
-    margin: 0,
-    padding: 0,
-    background: "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
-    boxSizing: "border-box",
+    backgroundColor: "#f9fafb",
     display: "flex",
-    flexDirection: "column"
+    justifyContent: "center",
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    color: "#1f2937",
+    padding: "32px",
+    boxSizing: "border-box",
   };
 
   const contentWrapper = {
-    flex: 1,
     width: "100%",
-    maxWidth: "1280px",
-    margin: "0 auto",
-    padding: "2vw 2vw 4vw 2vw",
-    display: "flex",
-    flexDirection: "column"
-  };
-
-  const cardsGrid = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-    gap: "28px",
-    marginTop: "18px",
-    flex: 1,
-    width: "100%"
-  };
-
-  const cardStyle = {
-    background: "rgba(255,255,255,0.96)",
-    boxShadow: "0 4px 24px rgba(140,85,255,0.09)",
-    borderRadius: "18px",
-    padding: "22px",
-    minHeight: "205px",
+    maxWidth: "1150px",
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    transition: "transform 0.3s ease",
-    cursor: "pointer"
+    gap: "3.5em",
+    animationName: "fadeUp",
+    animationDuration: "1s",
+    animationFillMode: "forwards",
+    opacity: 1,
   };
 
-  const cardHoverStyle = {
-    ...cardStyle,
-    transform: "scale(1.02)"
+  const headerStyle = {
+    fontSize: "3rem",
+    fontWeight: "700",
+    marginBottom: "0.4em",
+    opacity: 0,
+    animationName: "fadeUp",
+    animationDuration: "1s",
+    animationFillMode: "forwards",
+    animationDelay: "0.1s",
   };
 
-  const titleStyle = {
-    color: "#b45309",
-    fontWeight: 700,
-    marginBottom: 14,
-    fontSize: "1.3rem"
+  const subHeaderStyle = {
+    fontWeight: "500",
+    fontSize: "1.3rem",
+    marginBottom: "2em",
+    color: "#4b5563",
+    opacity: 0,
+    animationName: "fadeUp",
+    animationDuration: "1s",
+    animationFillMode: "forwards",
+    animationDelay: "0.2s",
+  };
+
+  const sectionStyle = {
+    marginBottom: "3em",
+    borderBottom: "1.5px solid #e5e7eb",
+    paddingBottom: "1.8em",
+    opacity: 0,
+    transform: "translateY(30px)",
+    animationName: "fadeUp",
+    animationDuration: "0.9s",
+    animationFillMode: "forwards",
+    animationTimingFunction: "ease-out",
+  };
+
+  const sectionTitleStyle = {
+    fontSize: "1.6rem",
+    fontWeight: "600",
+    borderBottom: "3px solid #3b82f6",
+    paddingBottom: "0.6em",
+    marginBottom: "1.2em",
+    color: "#2563eb",
+  };
+
+  const statsListStyle = {
+    display: "flex",
+    gap: "3.4em",
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    fontSize: "1.2rem",
+  };
+
+  const statItemStyle = {
+    fontSize: "1.3rem",
   };
 
   const buttonStyle = {
-    background: "linear-gradient(85deg, #fad0c4 0%, #fbc2eb 100%)",
-    padding: "13px 28px",
-    borderRadius: 28,
-    color: "#7c2d12",
-    fontWeight: 700,
-    fontSize: "1.03rem",
-    textDecoration: "none",
-    boxShadow: "0 4px 14px rgba(251,146,60,0.08)",
-    margin: "7px 4px",
-    display: "inline-block",
+    backgroundColor: "#3b82f6",
+    color: "white",
+    padding: "16px 36px",
     border: "none",
-    transition: "transform 0.2s ease"
+    borderRadius: "8px",
+    fontWeight: "700",
+    fontSize: "1.15rem",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease, transform 0.2s ease",
   };
 
+  const buttonHoverFocus = {
+    backgroundColor: "#2563eb",
+    transform: "scale(1.05)",
+  };
+
+  const linkStyle = {
+    color: "#2563eb",
+    textDecoration: "underline",
+    fontWeight: "700",
+    cursor: "pointer",
+    fontSize: "1.1rem",
+    transition: "color 0.3s ease",
+  };
+
+  const flexRowWrap = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "2.2em",
+  };
+
+  const postStyle = {
+    flex: "1 1 320px",
+    border: "1.5px solid #e0e7ff",
+    borderRadius: "8px",
+    padding: "22px 26px",
+    backgroundColor: "#ffffff",
+    boxShadow: "5px 5px 15px rgba(59, 130, 246, 0.15)",
+    fontSize: "1.1rem",
+  };
+
+  const postTitleStyle = {
+    fontWeight: 700,
+    marginBottom: "0.6em",
+    fontSize: "1.3rem",
+  };
+
+  const postAuthorStyle = {
+    fontStyle: "italic",
+    color: "#4b5563",
+    fontSize: "1.05rem",
+    marginBottom: "1em",
+  };
+
+  const postContentStyle = {
+    fontSize: "1.05rem",
+    marginBottom: "1.3em",
+    color: "#374151",
+  };
+
+  const deleteButtonStyle = {
+    backgroundColor: "#ef4444",
+    border: "none",
+    padding: "8px 14px",
+    borderRadius: "6px",
+    color: "white",
+    fontSize: "1rem",
+    cursor: "pointer",
+    fontWeight: "700",
+    transition: "background-color 0.2s ease",
+  };
+
+  const inputStyle = {
+    width: "72%",
+    padding: "14px",
+    marginRight: "16px",
+    borderRadius: "8px",
+    border: "1.8px solid #d1d5db",
+    fontSize: "1.15rem",
+  };
+
+  // To add hover/focus animations for buttons and links using inline styles with onMouseEnter & onMouseLeave handlers
+  // We will create dynamic components or helper components for repeated animations if needed,
+  // but in this example inline handlers suffice for demonstration.
+
   return (
-    <div style={containerStyle}>
-      <div style={contentWrapper}>
-        <h1 style={{
-          fontSize: "2.3rem",
-          textAlign: "center",
-          color: "#7c2d12",
-          fontWeight: 800
-        }}>
-          Welcome back, {user}! {selectedMood ? selectedMood.split(" ")[0] : dailyMood}
-        </h1>
+    <>
+      <style>
+        {`
+          @keyframes fadeUp {
+            from {
+              opacity: 0;
+              transform: translateY(25px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          /* Scrollbar styles for webkit browsers */
+          ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+          }
+          ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 6px;
+          }
+          ::-webkit-scrollbar-thumb {
+            background-color: #2563eb;
+            border-radius: 6px;
+            border: 2px solid #f1f5f9;
+          }
+        `}
+      </style>
+      <div style={containerStyle} role="main">
+        <div style={contentWrapper}>
+          <h1
+            style={headerStyle}
+            className="fadeUp"
+          >
+            Welcome back, {user?.username || user}!
+          </h1>
+          <p
+            style={subHeaderStyle}
+            className="fadeUp"
+          >
+            Spark joy, connect, and create with our amazing community!
+          </p>
 
-        <p style={{
-          textAlign: "center",
-          margin: "12px 0 30px 0",
-          color: "#8b5cf6",
-          fontSize: "1.13rem",
-          fontWeight: 500
-        }}>
-          Spark joy, connect, and create with our amazing community!
-        </p>
-
-        {/* Mood Selector */}
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          gap: "8px",
-          marginBottom: "20px"
-        }}>
-          {moods.map((mood) => (
-            <button
-              key={mood}
-              onClick={() => handleMoodSelect(mood)}
-              style={{
-                ...buttonStyle,
-                background: selectedMood === mood ? "#a6c1ee" : buttonStyle.background,
-                transform: selectedMood === mood ? "scale(1.1)" : "none"
-              }}
+          <div style={{ marginBottom: "3em" }}>
+            <AnimatedButton
+              style={buttonStyle}
+              onClick={surpriseAll}
+              ariaLabel="Surprise me with new fun facts, challenges, quotes, and pet mood"
             >
-              {mood}
-            </button>
-          ))}
-        </div>
+              🎲 Surprise Me!
+            </AnimatedButton>
+          </div>
 
-        {/* Action Buttons */}
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          gap: "12px",
-          marginBottom: "30px"
-        }}>
-          {[
-            ["Create Post", "/create"],
-            ["Join Group", "/support-groups"],
-            ["Chat Now", "/chat"],
-            ["Resources", "/resources"],
-            ["Share Story", "/share-story"],
-            ["Create Art", "/create-art"]
-          ].map(([label, to]) => (
-            <Link key={label} to={to} style={buttonStyle}>{label}</Link>
-          ))}
-        </div>
-
-        <div style={cardsGrid}>
-          {/* Quick Stats Card */}
-          <section style={cardStyle} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={titleStyle}>📊 Quick Stats (Live)</h2>
-            <ul style={{ listStyle: "none", padding: 0 }}>
-              <li>📝 Total Posts: <span style={{ color: "#b45309" }}>{stats.posts}</span></li>
-              <li>👥 Groups: <span style={{ color: "#b45309" }}>{stats.groups}</span></li>
-              <li>🌍 Members: <span style={{ color: "#b45309" }}>{stats.members}</span></li>
-              <li>🔥 Active Today: <span style={{ color: "#b45309" }}>{stats.activeToday}</span></li>
+          <AnimatedSection label="Live Quick Stats" style={sectionStyle} delay={0}>
+            <h2 style={sectionTitleStyle}>📊 Quick Stats (Live)</h2>
+            <ul style={statsListStyle}>
+              <li style={statItemStyle}>
+                📝 Total Posts: <strong>{stats.posts}</strong>
+              </li>
+              <li style={statItemStyle}>
+                👥 Groups: <strong>{stats.groups}</strong>
+              </li>
+              <li style={statItemStyle}>
+                🌍 Members: <strong>{stats.members}</strong>
+              </li>
+              <li style={statItemStyle}>
+                🔥 Active Today: <strong>{stats.activeToday}</strong>
+              </li>
             </ul>
-            <span style={{ fontSize: "0.9em", color: "#9ca3af" }}>Updated live</span>
-          </section>
+            <small style={{ color: "#6b7280" }}>Updated live</small>
+          </AnimatedSection>
 
-          {/* Fun Zone */}
-          <section style={{ ...cardStyle, background: "linear-gradient(137deg, #c3f0ca 20%, #a8e6cf 100%)" }} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={{ ...titleStyle, color: "#256029" }}>🎉 Fun Zone</h2>
-            <p><b>Fun Fact:</b> {funFact}</p>
-            <p><b>Challenge:</b> {challenge}</p>
-            <p><b>Quote of the Moment:</b> {quote}</p>
-            <small style={{ color: "#378262" }}>Rotates every 10s</small>
-          </section>
+          <AnimatedSection label="Fun Zone" style={sectionStyle} delay={100}>
+            <h2 style={sectionTitleStyle}>🎉 Fun Zone</h2>
+            <p>
+              <strong>Fun Fact:</strong> {funFact}
+            </p>
+            <p>
+              <strong>Challenge:</strong> {challenge}
+            </p>
+            <p>
+              <strong>Quote of the Moment:</strong> {quote}
+            </p>
+            <small style={{ color: "#6b7280" }}>Rotates every 10s</small>
+          </AnimatedSection>
 
-          {/* Live Chat Preview */}
-          <section style={cardStyle} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={titleStyle}>💬 Live Community Chat</h2>
-            {chatMessages.length === 0 ? (
-              <p>No messages yet. Start the conversation!</p>
-            ) : (
-              chatMessages.map((msg, idx) => (
-                <div key={idx} style={{ marginBottom: 10 }}>
-                  <b>{msg.user}:</b> {msg.content}
-                </div>
-              ))
-            )}
-            <form onSubmit={handleSendMessage} style={{ marginTop: 10 }}>
+          <AnimatedSection label="Live Community Chat" style={sectionStyle} delay={200}>
+            <h2 style={sectionTitleStyle}>💬 Live Community Chat</h2>
+            <div
+              style={{
+                maxHeight: "200px",
+                overflowY: "auto",
+                marginBottom: "16px",
+                border: "1px solid #d1d5db",
+                borderRadius: "8px",
+                padding: "14px",
+                backgroundColor: "#ffffff",
+              }}
+              tabIndex="0"
+            >
+              {chatMessages.length === 0 ? (
+                <p>No messages yet. Start the conversation!</p>
+              ) : (
+                chatMessages.map((msg, idx) => (
+                  <div key={idx} style={{ marginBottom: "10px", fontSize: "1.1rem" }}>
+                    <strong>{msg.user}:</strong> {msg.content}
+                  </div>
+                ))
+              )}
+            </div>
+            <form onSubmit={handleSendMessage} aria-label="Send chat message" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="Type a message..."
-                style={{
-                  width: "70%",
-                  padding: "8px",
-                  borderRadius: 8,
-                  border: "1px solid #ccc"
-                }}
+                aria-label="Type your chat message"
+                style={inputStyle}
+                autoComplete="off"
               />
-              <button type="submit" style={{ ...buttonStyle, padding: "8px 16px" }}>Send</button>
+              <AnimatedButton
+                style={buttonStyle}
+                disabled={!newMessage.trim()}
+                ariaDisabled={!newMessage.trim()}
+              >
+                Send
+              </AnimatedButton>
             </form>
-            <Link to="/chat" style={{ color: "#9333ea", textDecoration: "underline" }}>Join Full Chat →</Link>
-          </section>
+            {isTyping && (
+              <p aria-live="assertive" style={{ color: "#2563eb", fontSize: "1rem" }}>
+                Typing...
+              </p>
+            )}
+            <Link to="/chat" style={linkStyle} aria-label="Join full chat">
+              Join Full Chat →
+            </Link>
+          </AnimatedSection>
 
-          {/* Recent Posts Card */}
-          <section style={cardStyle} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={titleStyle}>📰 Recent Posts</h2>
-            {loadingPosts ? <p>Loading...</p> :
-              (posts.length === 0
-                ? <p>No posts yet. <Link to="/create">Create the first post</Link></p>
-                : posts.map((p) => (
-                  <div key={p._id} style={{
-                    marginBottom: 12,
-                    position: "relative",
-                    paddingRight: 70
-                  }}>
-                    <b>{p.title}</b>
-                    <span style={{ color: "#7e22ce", fontStyle: "italic" }}>
-                      {p.author?.username && ` by ${p.author.username}`}
-                    </span>
-                    <div style={{ color: "#78350f", fontSize: "0.96em" }}>
-                      {p.content.slice(0, 56)}...
-                    </div>
-                    <button
-                      style={{
-                        position: "absolute",
-                        right: 0,
-                        top: 0,
-                        background: "#ef4444",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 4,
-                        padding: "4px 8px",
-                        cursor: "pointer",
-                        fontSize: 12
-                      }}
+          <AnimatedSection label="Recent Posts" style={sectionStyle} delay={300}>
+            <h2 style={sectionTitleStyle}>📰 Recent Posts</h2>
+            {loadingPosts ? (
+              <p style={{ fontSize: "1.15rem" }}>Loading...</p>
+            ) : posts.length === 0 ? (
+              <p style={{ fontSize: "1.15rem" }}>
+                No posts yet. <Link to="/create" style={linkStyle}>Create the first post</Link>
+              </p>
+            ) : (
+              <div style={flexRowWrap}>
+                {posts.map((p) => (
+                  <article key={p._id} style={postStyle}>
+                    <h3 style={postTitleStyle}>{p.title}</h3>
+                    <p style={postAuthorStyle}>{p.author?.username && `by ${p.author.username}`}</p>
+                    <p style={postContentStyle}>{p.content.slice(0, 70)}...</p>
+                    <AnimatedButton
+                      style={deleteButtonStyle}
                       onClick={() => handleDeletePost(p._id)}
+                      ariaLabel={`Delete post titled ${p.title}`}
                     >
                       Delete
-                    </button>
-                  </div>
-                ))
-              )
-            }
-            <Link to="/feed" style={{ color: "#9333ea", textDecoration: "underline" }}>View All Posts →</Link>
-          </section>
+                    </AnimatedButton>
+                  </article>
+                ))}
+              </div>
+            )}
+            <Link to="/feed" style={linkStyle} aria-label="View all posts">
+              View All Posts →
+            </Link>
+          </AnimatedSection>
 
-          {/* Groups Card */}
-          <section style={cardStyle} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={titleStyle}>🤝 Support Groups</h2>
-            {groups.length === 0
-              ? <p>No groups yet. <Link to="/support-groups">Browse groups</Link></p>
-              : groups.map((group) => (
-                <div key={group._id} style={{ marginBottom: 12 }}>
-                  <b>{group.name}</b>
-                  <div style={{ color: "#92400e", fontSize: "0.98em" }}>
-                    {group.description?.slice(0, 54)}...
-                  </div>
-                </div>
-              ))
-            }
-            <Link to="/support-groups" style={{ color: "#9a3412", textDecoration: "underline" }}>Browse More Groups →</Link>
-          </section>
+          <AnimatedSection label="Support Groups" style={sectionStyle} delay={400}>
+            <h2 style={sectionTitleStyle}>🤝 Support Groups</h2>
+            {groups.length === 0 ? (
+              <p style={{ fontSize: "1.1rem" }}>
+                No groups yet. <Link to="/support-groups" style={linkStyle}>Browse groups</Link>
+              </p>
+            ) : (
+              <ul style={{ paddingLeft: 0, listStyle: "none", marginBottom: "1.3em" }}>
+                {groups.map((group) => (
+                  <li key={group._id} style={{ marginBottom: "1em", fontSize: "1.1rem" }}>
+                    <strong>{group.name}</strong>
+                    <p style={{ margin: 0, color: "#4b5563" }}>{group.description?.slice(0, 100)}...</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Link to="/support-groups" style={linkStyle} aria-label="Browse more groups">
+              Browse More Groups →
+            </Link>
+          </AnimatedSection>
 
-          {/* Community Spotlight */}
-          <section style={{ ...cardStyle, background: "linear-gradient(135deg, #fbc2eb 0%, #fef3c7 100%)" }} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={{ ...titleStyle, color: "#7c2d12" }}>🌟 Community Spotlight</h2>
+          <AnimatedSection label="Community Spotlight" style={sectionStyle} delay={500}>
+            <h2 style={sectionTitleStyle}>🌟 Community Spotlight</h2>
             {spotlightUser ? (
-              <div>
-                <b>{spotlightUser.username}</b>
-                <p style={{ color: "#78350f", fontSize: "0.96em" }}>
-                  {spotlightUser.bio?.slice(0, 60) || "An amazing community member!"}...
+              <>
+                <h3 style={{ fontWeight: "700", fontSize: "1.4rem" }}>{spotlightUser.username}</h3>
+                <p style={{ color: "#4b5563", fontSize: "1.1rem", marginBottom: "1em" }}>
+                  {spotlightUser.bio?.slice(0, 120) || "An amazing community member!"}...
                 </p>
-                <Link to={`/profile/${spotlightUser._id}`} style={{ color: "#9333ea", textDecoration: "underline" }}>
+                <Link
+                  to={`/profile/${spotlightUser._id}`}
+                  style={linkStyle}
+                  aria-label={`Visit profile of ${spotlightUser.username}`}
+                >
                   Visit Profile →
                 </Link>
-              </div>
+              </>
             ) : (
-              <p>Loading spotlight...</p>
+              <p style={{ fontSize: "1.15rem" }}>Loading spotlight...</p>
             )}
-          </section>
+          </AnimatedSection>
 
-          {/* Creative Prompt Generator */}
-          <section style={{ ...cardStyle, background: "linear-gradient(135deg, #fef3c7 0%, #a6c1ee 100%)" }} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={{ ...titleStyle, color: "#7c2d12" }}>✍️ Creative Spark</h2>
-            <p><b>Today's Prompt:</b> {creativePrompt}</p>
-            <button
-              onClick={() => setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)])}
-              style={{ ...buttonStyle, padding: "8px 16px" }}
+          <AnimatedSection label="Creative Prompts" style={sectionStyle} delay={600}>
+            <h2 style={sectionTitleStyle}>✍️ Creative Spark</h2>
+            <p style={{ fontSize: "1.2rem", marginBottom: "1.3em" }}>{creativePrompt}</p>
+            <AnimatedButton
+              style={buttonStyle}
+              onClick={() =>
+                setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)])
+              }
+              ariaLabel="Get new creative prompt"
             >
               New Prompt
-            </button>
-            <Link to="/create-art" style={{ color: "#9333ea", textDecoration: "underline" }}>Share Your Creation →</Link>
-          </section>
+            </AnimatedButton>
+            <Link to="/create-art" style={{ ...linkStyle, marginLeft: "1.2em" }} aria-label="Share your creation">
+              Share Your Creation →
+            </Link>
+          </AnimatedSection>
 
-          {/* Gratitude Wall */}
-          <section style={cardStyle} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={titleStyle}>🙏 Gratitude Wall</h2>
+          <AnimatedSection label="Gratitude Wall" style={sectionStyle} delay={700}>
+            <h2 style={sectionTitleStyle}>🙏 Gratitude Wall</h2>
             {gratitudeWall.length === 0 ? (
-              <p>Be the first to share gratitude!</p>
+              <p style={{ fontSize: "1.1rem" }}>Be the first to share gratitude!</p>
             ) : (
               gratitudeWall.map((note, idx) => (
-                <div key={idx} style={{ marginBottom: 10 }}>
-                  <b>{note.user}:</b> {note.content}
+                <div key={idx} style={{ marginBottom: "1em", fontSize: "1.1rem" }}>
+                  <strong>{note.user}:</strong> {note.content}
                 </div>
               ))
             )}
-            <form onSubmit={handleGratitudeSubmit} style={{ marginTop: 10 }}>
+            <form onSubmit={handleGratitudeSubmit} aria-label="Submit gratitude note" style={{ marginTop: "1.5em", display: "flex", gap: "16px" }}>
               <input
                 type="text"
                 value={gratitudeNote}
                 onChange={(e) => setGratitudeNote(e.target.value)}
                 placeholder="What are you grateful for?"
-                style={{
-                  width: "70%",
-                  padding: "8px",
-                  borderRadius: 8,
-                  border: "1px solid #ccc"
-                }}
+                aria-label="Gratitude note input"
+                style={{ ...inputStyle, width: "68%" }}
               />
-              <button type="submit" style={{ ...buttonStyle, padding: "8px 16px" }}>Share</button>
+              <AnimatedButton style={buttonStyle} type="submit">
+                Share
+              </AnimatedButton>
             </form>
-          </section>
+          </AnimatedSection>
 
-          {/* Virtual Pet Companion */}
-          <section style={{ ...cardStyle, background: "linear-gradient(135deg, #c3f0ca 0%, #fbc2eb 100%)" }} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={{ ...titleStyle, color: "#256029" }}>🐾 Your Virtual Pet</h2>
-            <p><b>Pet Mood:</b> {petMood}</p>
-            <button
+          <AnimatedSection label="Virtual Pet" style={sectionStyle} delay={800}>
+            <h2 style={sectionTitleStyle}>🐾 Your Virtual Pet</h2>
+            <p style={{ fontSize: "1.2rem" }}>
+              <strong>Pet Mood:</strong> <span aria-live="polite">{petMood}</span>
+            </p>
+            <AnimatedButton
+              style={buttonStyle}
               onClick={handlePetInteraction}
-              style={{ ...buttonStyle, padding: "8px 16px" }}
+              ariaLabel="Play with your virtual pet"
             >
               Play with Pet
-            </button>
-            <small style={{ color: "#378262" }}>Your pet changes mood every 10s!</small>
-          </section>
+            </AnimatedButton>
+            <small style={{ display: "block", marginTop: "0.6em", color: "#6b7280", fontSize: "1rem" }}>
+              Your pet changes mood every 10 seconds!
+            </small>
+          </AnimatedSection>
 
-          {/* Community Playlist */}
-          <section style={cardStyle} onMouseOver={(e) => e.currentTarget.style.transform = cardHoverStyle.transform} onMouseOut={(e) => e.currentTarget.style.transform = "none"}>
-            <h2 style={titleStyle}>🎵 Community Playlist</h2>
+          <AnimatedSection label="Community Playlist" style={sectionStyle} delay={900}>
+            <h2 style={sectionTitleStyle}>🎵 Community Playlist</h2>
             {playlistSongs.length === 0 ? (
-              <p>No songs yet. Add one!</p>
+              <p style={{ fontSize: "1.1rem" }}>No songs yet. Add one!</p>
             ) : (
-              playlistSongs.map((song, idx) => (
-                <div key={idx} style={{ marginBottom: 10 }}>
-                  <b>{song.song}</b> <i>by {song.user}</i>
-                </div>
-              ))
+              <ul style={{ paddingLeft: 0, listStyle: "none", marginBottom: "1.5em", fontSize: "1.1rem" }}>
+                {playlistSongs.map((song, idx) => (
+                  <li key={idx}>
+                    <strong>{song.song}</strong> by {song.user}
+                  </li>
+                ))}
+              </ul>
             )}
-            <form onSubmit={handleAddSong} style={{ marginTop: 10 }}>
+            <form onSubmit={handleAddSong} aria-label="Add song to playlist" style={{ marginBottom: "2em", display: "flex", gap: "16px" }}>
               <input
                 type="text"
                 name="song"
                 placeholder="Add a song title..."
-                style={{
-                  width: "70%",
-                  padding: "8px",
-                  borderRadius: 8,
-                  border: "1px solid #ccc"
-                }}
+                aria-label="Song title input"
+                style={{ ...inputStyle, width: "67%" }}
               />
-              <button type="submit" style={{ ...buttonStyle, padding: "8px 16px" }}>Add Song</button>
+              <AnimatedButton style={buttonStyle} type="submit">
+                Add Song
+              </AnimatedButton>
             </form>
-            <Link to="/playlist" style={{ color: "#9333ea", textDecoration: "underline" }}>View Full Playlist →</Link>
-          </section>
+            <Link to="/playlist" style={linkStyle} aria-label="View full playlist">
+              View Full Playlist →
+            </Link>
+          </AnimatedSection>
         </div>
       </div>
-    </div>
+    </>
+  );
+};
+
+// Animated Button Wrapper with hover + focus effects
+const AnimatedButton = ({ style, children, onClick, disabled, ariaDisabled, type, ariaLabel }) => {
+  const [hover, setHover] = React.useState(false);
+  const [focus, setFocus] = React.useState(false);
+
+  const combinedStyle = {
+    ...style,
+    ...(hover || focus
+      ? {
+          backgroundColor: "#2563eb",
+          transform: "scale(1.05)",
+          transition: "background-color 0.3s ease, transform 0.2s ease",
+        }
+      : {
+          transition: "background-color 0.3s ease, transform 0.2s ease",
+        }),
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.6 : 1,
+  };
+
+  const handleMouseEnter = () => {
+    if (!disabled) setHover(true);
+  };
+  const handleMouseLeave = () => setHover(false);
+  const handleFocus = () => !disabled && setFocus(true);
+  const handleBlur = () => setFocus(false);
+
+  return (
+    <button
+      aria-label={ariaLabel}
+      type={type || "button"}
+      style={combinedStyle}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-disabled={ariaDisabled}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+    >
+      {children}
+    </button>
+  );
+};
+
+// Animated Section Wrapper for fadeUp animations with delay
+const AnimatedSection = ({ children, style, delay = 0, label }) => {
+  return (
+    <section
+      aria-label={label}
+      style={{
+        ...style,
+        animationDelay: `${delay}ms`,
+        animationFillMode: "forwards",
+        animationName: "fadeUp",
+        animationDuration: "900ms",
+        animationTimingFunction: "ease-out",
+      }}
+      tabIndex="0"
+    >
+      {children}
+    </section>
   );
 };
 
