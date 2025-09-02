@@ -676,7 +676,7 @@ const AnimatedSection = ({ children, style, delay = 0, label }) => (
       animationDelay: `${delay}ms`,
       animationFillMode: "forwards",
       animationName: "fadeUp",
-      animationDuration: "800ms",
+      animationDuration: "900ms",
       animationTimingFunction: "ease-out",
     }}
     tabIndex="0"
