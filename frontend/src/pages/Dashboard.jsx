@@ -17,57 +17,84 @@ const Dashboard = ({ user }) => {
   const [petMood, setPetMood] = useState("happy 🐶");
   const [playlistSongs, setPlaylistSongs] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [mood, setMood] = useState("😊");
+  const [dailyInspiration, setDailyInspiration] = useState("Believe you can and you're halfway there.");
+  const [quickTips, setQuickTips] = useState([
+    "Take short mindful breaks every hour.",
+    "Drink water regularly.",
+    "Connect with someone new this week.",
+    "Write down one thing you're grateful for today."
+  ]);
+  const [notifications, setNotifications] = useState([]); // New: Notifications
+  const [resources, setResources] = useState([]); // New: Helpful resources
+  const [events, setEvents] = useState([]); // New: Upcoming events
+  const [searchQuery, setSearchQuery] = useState(""); // New: Search bar
 
+  // Fun arrays for different slots
   const funFacts = [
     "Did you know? Honey never spoils.",
     "Dolphins have names for each other!",
     "Bamboo can grow up to 3 feet in one day.",
     "There's no sound in space.",
+    "Octopuses have three hearts."
   ];
+
   const challenges = [
     "Share a picture of something blue in chat.",
     "Post your favorite quote.",
     "Recommend a song to the community.",
     "Tell a one-line joke.",
+    "Share a self-care tip."
   ];
+
   const quotes = [
     "The best way to find yourself is to lose yourself in the service of others. – Mahatma Gandhi",
     "You are never too old to set another goal or to dream a new dream. – C.S. Lewis",
     "The only way to do great work is to love what you do. – Steve Jobs",
     "We rise by lifting others. – Robert Ingersoll",
+    "Be the change you wish to see in the world. – Mahatma Gandhi"
   ];
+
   const creativePrompts = [
     "Sketch a dream destination you'd love to visit.",
     "Write a 3-sentence story about a magical encounter.",
     "Imagine a new holiday and describe how you'd celebrate it.",
     "Design a superhero inspired by your favorite hobby.",
+    "Create a poem about your favorite memory."
   ];
-  const petMoods = ["happy 🐶", "playful 🐾", "cozy 😺", "curious 🐰"];
+
+  const petMoods = ["happy 🐶", "playful 🐾", "cozy 😺", "curious 🐰", "adventurous 🦊"];
 
   const memberMilestones = [
     { achievement: "First Post", description: "Celebrate your very first post!" },
     { achievement: "Joined 3 Groups", description: "Connect with multiple support groups." },
     { achievement: "100 Messages Sent", description: "You love to stay connected!" },
     { achievement: "1 Month Anniversary", description: "Thank you for being part of our community!" },
+    { achievement: "Helped 5 Members", description: "You're a community hero!" }
   ];
 
+  // State handlers for fun dynamic content
   const [funFact, setFunFact] = useState(funFacts[0]);
   const [challenge, setChallenge] = useState(challenges[0]);
   const petMoodTimeoutRef = useRef(null);
 
   const playClickSound = () => {
     const audio = new Audio(
-      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAACAgICAgICAgICAgICAgICAg"
+      "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAACAgICAgICAgICAgICAgICAgICAg"
     );
     audio.play();
   };
 
+  // Interval to update fun facts, challenges, prompts, pet moods, daily inspiration & mood
   useEffect(() => {
     const interval = setInterval(() => {
       setFunFact(funFacts[Math.floor(Math.random() * funFacts.length)]);
       setChallenge(challenges[Math.floor(Math.random() * challenges.length)]);
       setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)]);
       setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]);
+      setDailyInspiration(quotes[Math.floor(Math.random() * quotes.length)]);
+      setMood(["😊", "😌", "😍", "🤗", "😎", "🥳", "🌟"][Math.floor(Math.random() * 7)]);
+      setQuickTips((tips) => [...tips.slice(1), tips[0]]);
     }, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -105,6 +132,26 @@ const Dashboard = ({ user }) => {
 
         const playlistData = await playlistRes.json();
         setPlaylistSongs(playlistData.slice(0, 3));
+
+        // Mock new data fetches (in real app, add APIs)
+        setNotifications([
+          { id: 1, message: "New message from friend!", type: "message" },
+          { id: 2, message: "Your post got 5 likes!", type: "like" },
+          { id: 3, message: "Group event tomorrow!", type: "event" }
+        ]);
+
+        setResources([
+          { title: "Mindfulness Meditation Guide", link: "/resources/meditation" },
+          { title: "Coping with Anxiety", link: "/resources/anxiety" },
+          { title: "Hotline Support Numbers", link: "/resources/hotlines" },
+          { title: "Healthy Eating Tips", link: "/resources/nutrition" }
+        ]);
+
+        setEvents([
+          { title: "Weekly Support Meetup", date: "Tomorrow at 7 PM" },
+          { title: "Art Therapy Workshop", date: "Saturday at 2 PM" },
+          { title: "Mindfulness Session", date: "Sunday at 10 AM" }
+        ]);
       } catch {
         setLoadingPosts(false);
       }
@@ -129,11 +176,15 @@ const Dashboard = ({ user }) => {
     });
 
     socket.on("newChatMessage", (message) => {
-      setChatMessages((prev) => [...prev, message].slice(-3));
+      setChatMessages((prev) => [...prev, message].slice(-5));
     });
 
     socket.on("newGratitudeNote", (note) => {
-      setGratitudeWall((prev) => [...prev, note].slice(-3));
+      setGratitudeWall((prev) => [...prev, note].slice(-5));
+    });
+
+    socket.on("newNotification", (notification) => { // New: Socket for notifications
+      setNotifications((prev) => [...prev, notification].slice(-5));
     });
 
     socket.on("disconnect", () => {
@@ -143,6 +194,7 @@ const Dashboard = ({ user }) => {
     return () => socket.disconnect();
   }, []);
 
+  // Handlers...
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -210,479 +262,469 @@ const Dashboard = ({ user }) => {
     });
   };
 
-  // --- COMPACT STYLES ---
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+    // In real app, filter posts/groups etc. based on searchQuery
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    playClickSound();
+  };
+
+  // --- STYLES ---
+
   const containerStyle = {
     minHeight: "100vh",
     width: "100vw",
-    backgroundColor: "#f9fafb",
-    display: "flex",
-    justifyContent: "center",
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    color: "#1f2937",
-    padding: "12px",
-    boxSizing: "border-box",
-  };
-  const contentWrapper = {
-    width: "100%",
-    maxWidth: "950px",
+    background: "linear-gradient(135deg, #f6d5f7 0%, #fbeed5 100%)", // Softer, more engaging gradient
     display: "flex",
     flexDirection: "column",
-    gap: "1.4em",
-    animationName: "fadeUp",
-    animationDuration: "1s",
-    animationFillMode: "forwards",
-    opacity: 1,
-  };
-  const headerStyle = {
-    fontSize: "2.3rem",
-    fontWeight: "700",
-    marginBottom: "0.2em",
-    opacity: 0,
-    animationName: "fadeUp",
-    animationDuration: "1s",
-    animationFillMode: "forwards",
-    animationDelay: "0.1s",
-    letterSpacing: "1px"
-  };
-  const subHeaderStyle = {
-    fontWeight: "500",
-    fontSize: "1rem",
-    marginBottom: "1.2em",
-    color: "#4b5563",
-    opacity: 0,
-    animationName: "fadeUp",
-    animationDuration: "1s",
-    animationFillMode: "forwards",
-    animationDelay: "0.2s",
-  };
-  const sectionStyle = {
-    marginBottom: "1.1em",
-    borderBottom: "1px solid #e5e7eb",
-    paddingBottom: "1.1em",
-    opacity: 0,
-    transform: "translateY(15px)",
-    animationName: "fadeUp",
-    animationDuration: "0.8s",
-    animationFillMode: "forwards",
-    animationTimingFunction: "ease-out",
-  };
-  const sectionTitleStyle = {
-    fontSize: "1.15rem",
-    fontWeight: "600",
-    borderBottom: "2px solid #3b82f6",
-    paddingBottom: "0.35em",
-    marginBottom: "0.85em",
-    color: "#2563eb",
-    letterSpacing: "0.5px"
-  };
-  const statsListStyle = {
-    display: "flex",
-    gap: "2em",
-    listStyle: "none",
-    padding: 0,
-    margin: 0,
-    fontSize: "1.03rem",
-  };
-  const statItemStyle = {
-    fontSize: "1.09rem",
-  };
-  const buttonStyle = {
-    backgroundColor: "#2563eb",
-    color: "#fff",
-    padding: "10px 26px",
-    border: "none",
-    borderRadius: "18px",
-    fontWeight: "700",
-    fontSize: "1rem",
-    cursor: "pointer",
-    boxShadow: "0 2px 8px rgba(59,130,246,0.08)",
-    letterSpacing: "0.5px",
-    transition: "background 0.2s, box-shadow 0.2s, transform 0.15s",
-    display: "inline-flex",
     alignItems: "center",
-    gap: "0.3em"
-  };
-  const buttonHoverFocus = {
-    backgroundColor: "#1d4ed8",
-    transform: "scale(1.04)"
-  };
-  const linkStyle = {
-    color: "#2563eb",
-    textDecoration: "none",
-    background: "#e0e7ff",
-    padding: "6px 15px",
-    borderRadius: "14px",
-    fontWeight: "700",
-    fontSize: "0.99rem",
-    transition: "background .2s, color .2s",
-    cursor: "pointer",
-    marginLeft: "5px"
-  };
-  const flexRowWrap = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "1.25em",
-  };
-  const postStyle = {
-    flex: "1 1 260px",
-    border: "1px solid #e0e7ff",
-    borderRadius: "8px",
-    padding: "12px 16px",
-    backgroundColor: "#ffffff",
-    boxShadow: "2px 2px 9px rgba(59,130,246,0.10)",
-    fontSize: "1.05rem",
-    marginBottom: "4px"
-  };
-  const postTitleStyle = {
-    fontWeight: 700,
-    marginBottom: "0.4em",
-    fontSize: "1.05rem",
-  };
-  const postAuthorStyle = {
-    fontStyle: "italic",
-    color: "#4b5563",
-    fontSize: "0.94rem",
-    marginBottom: "0.7em",
-  };
-  const postContentStyle = {
-    fontSize: "0.96rem",
-    marginBottom: "1em",
-    color: "#374151",
-  };
-  const deleteButtonStyle = {
-    backgroundColor: "#ef4444",
-    border: "none",
-    padding: "6px 12px",
-    borderRadius: "14px",
-    color: "white",
-    fontSize: "0.98rem",
-    cursor: "pointer",
-    fontWeight: "700",
-    marginTop: "2px",
-    letterSpacing: "0.3px",
-    transition: "background 0.15s, transform 0.13s"
-  };
-  const inputStyle = {
-    width: "60%",
-    padding: "10px",
-    marginRight: "5px",
-    borderRadius: "10px",
-    border: "1.3px solid #d1d5db",
-    fontSize: "0.99rem",
+    padding: "40px 20px",
+    fontFamily: "'Poppins', sans-serif", // More modern font (assume imported or use system)
+    color: "#333",
+    overflowX: "hidden",
   };
 
-  // --- MAIN RETURN ---
+  const headerSectionStyle = {
+    width: "100%",
+    maxWidth: "1200px",
+    textAlign: "center",
+    marginBottom: "40px",
+  };
+
+  const contentWrapper = {
+    width: "100%",
+    maxWidth: "1200px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "40px",
+  };
+
+  const sectionStyle = {
+    background: "rgba(255, 255, 255, 0.85)", // Semi-transparent for depth
+    borderRadius: "20px",
+    padding: "30px",
+    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
+    transition: "all 0.4s ease",
+    position: "relative",
+    overflow: "hidden",
+  };
+
+  const heroStyle = {
+    background: "linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)",
+    borderRadius: "30px",
+    padding: "50px 30px",
+    textAlign: "center",
+    color: "#fff",
+    boxShadow: "0 15px 40px rgba(0, 0, 0, 0.2)",
+    marginBottom: "50px",
+  };
+
+  const sectionTitleStyle = {
+    fontSize: "2rem",
+    fontWeight: "700",
+    marginBottom: "20px",
+    color: "#4a148c",
+    position: "relative",
+    display: "inline-block",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "15px 20px",
+    borderRadius: "50px",
+    border: "none",
+    background: "#f3e5f5",
+    fontSize: "1rem",
+    color: "#512da8",
+    outline: "none",
+    transition: "all 0.3s",
+    boxShadow: "inset 0 2px 5px rgba(0,0,0,0.05)",
+  };
+
+  const buttonBaseStyle = {
+    background: "linear-gradient(135deg, #ab47bc 0%, #8e24aa 100%)",
+    borderRadius: "50px",
+    border: "none",
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: "1rem",
+    padding: "12px 28px",
+    cursor: "pointer",
+    boxShadow: "0 5px 15px rgba(171,71,188,0.4)",
+    transition: "all 0.3s ease",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+  };
+
+  const linkStyle = {
+    color: "#7b1fa2",
+    fontWeight: "600",
+    textDecoration: "none",
+    transition: "color 0.3s",
+  };
+
+  const flexRow = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "20px",
+    justifyContent: "space-between",
+  };
+
+  // Components
+
+  const Button = ({ style, children, onClick, disabled, ariaLabel, type }) => {
+    const [hover, setHover] = React.useState(false);
+    const combinedStyle = {
+      ...buttonBaseStyle,
+      ...style,
+      transform: hover && !disabled ? "scale(1.05)" : "scale(1)",
+      opacity: disabled ? 0.7 : 1,
+    };
+    return (
+      <button
+        aria-label={ariaLabel}
+        type={type || "button"}
+        style={combinedStyle}
+        onClick={disabled ? undefined : onClick}
+        disabled={disabled}
+        onMouseEnter={() => !disabled && setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {children}
+      </button>
+    );
+  };
+
+  const AnimatedSection = ({ children, style, delay = 0, label }) => (
+    <section
+      aria-label={label}
+      style={{
+        ...sectionStyle,
+        ...style,
+        animationDelay: `${delay}ms`,
+        animationFillMode: "forwards",
+        animationName: "slideIn",
+        animationDuration: "800ms",
+        animationTimingFunction: "ease-in-out",
+      }}
+      tabIndex="0"
+    >
+      {children}
+    </section>
+  );
+
   return (
     <>
       <style>
         {`
-        @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(15px);
+          @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateX(-50px);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
+          ::-webkit-scrollbar {
+            width: 10px;
           }
-        }
-        ::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 6px;
-        }
-        ::-webkit-scrollbar-thumb {
-          background-color: #2563eb;
-          border-radius: 6px;
-          border: 2px solid #f1f5f9;
-        }
+          ::-webkit-scrollbar-track {
+            background: #f3e5f5;
+            border-radius: 5px;
+          }
+          ::-webkit-scrollbar-thumb {
+            background-color: #7b1fa2;
+            border-radius: 5px;
+          }
+          input:focus {
+            box-shadow: 0 0 10px #ab47bc !important;
+          }
+          a:hover, a:focus {
+            color: #4a148c !important;
+          }
+          section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15) !important;
+          }
+          @media (max-width: 768px) {
+            .flex-row {
+              flex-direction: column;
+            }
+            h1 {
+              font-size: 2.5rem !important;
+            }
+            section {
+              padding: 20px !important;
+            }
+          }
+          @media (max-width: 480px) {
+            main {
+              padding: 20px 10px !important;
+            }
+          }
         `}
       </style>
-      <div style={containerStyle} role="main">
+      <main style={containerStyle} role="main">
+        <div style={headerSectionStyle}>
+          <div style={heroStyle}>
+            <h1 style={{ fontSize: "3.5rem", marginBottom: "10px", textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>
+              Welcome Back, {user?.username || user}! {mood}
+            </h1>
+            <p style={{ fontSize: "1.4rem", marginBottom: "30px" }}>Discover inspiration, connect with others, and nurture your well-being.</p>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearch}
+              placeholder="Search posts, groups, or resources..."
+              style={{ ...inputStyle, maxWidth: "600px", margin: "0 auto 20px", display: "block" }}
+            />
+            <Button onClick={() => alert('Search functionality coming soon!')}>Search</Button>
+          </div>
+        </div>
         <div style={contentWrapper}>
-          <h1 style={headerStyle} className="fadeUp">
-            Welcome back, {user?.username || user}!
-          </h1>
-          <p style={subHeaderStyle} className="fadeUp">
-            Spark joy, connect, and create with our amazing community!
-          </p>
-
-          <AnimatedSection label="Live Quick Stats" style={sectionStyle} delay={0}>
-            <h2 style={sectionTitleStyle}>📊 Quick Stats (Live)</h2>
-            <ul style={statsListStyle}>
-              <li style={statItemStyle}>
-                📝 Total Posts: <strong>{stats.posts}</strong>
-              </li>
-              <li style={statItemStyle}>
-                👥 Groups: <strong>{stats.groups}</strong>
-              </li>
-              <li style={statItemStyle}>
-                🌍 Members: <strong>{stats.members}</strong>
-              </li>
-              <li style={statItemStyle}>
-                🔥 Active Today: <strong>{stats.activeToday}</strong>
-              </li>
-            </ul>
-            <small style={{ color: "#6b7280" }}>Updated live</small>
+          {/* Notifications */}
+          <AnimatedSection label="Notifications" delay={0}>
+            <h2 style={sectionTitleStyle}>🔔 Notifications</h2>
+            {notifications.length === 0 ? (
+              <p>No new notifications. You're all caught up!</p>
+            ) : (
+              <>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                  {notifications.map((notif) => (
+                    <li key={notif.id} style={{ marginBottom: "15px", padding: "10px", background: "#f3e5f5", borderRadius: "10px" }}>
+                      {notif.message}
+                    </li>
+                  ))}
+                </ul>
+                <Button onClick={handleClearNotifications} style={{ marginTop: "10px" }}>Clear All</Button>
+              </>
+            )}
           </AnimatedSection>
 
-          <AnimatedSection label="Fun Zone" style={sectionStyle} delay={50}>
-            <h2 style={sectionTitleStyle}>🎉 Fun Zone</h2>
-            <p><strong>Fun Fact:</strong> {funFact}</p>
-            <p><strong>Challenge:</strong> {challenge}</p>
-            <p><strong>Quote of the Moment:</strong> {quotes[Math.floor(Math.random() * quotes.length)]}</p>
-            <small style={{ color: "#6b7280" }}>Rotates every 10s</small>
-          </AnimatedSection>
+          {/* Stats and Mood Tracker - Combined for flow */}
+          <div style={flexRow} className="flex-row">
+            <AnimatedSection label="Community Stats" style={{ flex: 1 }} delay={100}>
+              <h2 style={sectionTitleStyle}>📊 Community Stats</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "15px" }}>
+                <div style={{ textAlign: "center", padding: "15px", background: "#e1bee7", borderRadius: "15px" }}>Posts: {stats.posts}</div>
+                <div style={{ textAlign: "center", padding: "15px", background: "#e1bee7", borderRadius: "15px" }}>Groups: {stats.groups}</div>
+                <div style={{ textAlign: "center", padding: "15px", background: "#e1bee7", borderRadius: "15px" }}>Members: {stats.members}</div>
+                <div style={{ textAlign: "center", padding: "15px", background: "#e1bee7", borderRadius: "15px" }}>Active Today: {stats.activeToday}</div>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection label="Mood Tracker" style={{ flex: 1 }} delay={150}>
+              <h2 style={sectionTitleStyle}>🌈 Mood Tracker</h2>
+              <p style={{ fontSize: "2rem", textAlign: "center", marginBottom: "20px" }}>{petMood}</p>
+              <Button onClick={() => setMood("🤩")} style={{ width: "100%" }}>Boost My Mood</Button>
+            </AnimatedSection>
+          </div>
 
-          <AnimatedSection label="Live Community Chat" style={sectionStyle} delay={100}>
-            <h2 style={sectionTitleStyle}>💬 Live Community Chat</h2>
+          {/* Daily Inspiration and Fun Zone - Side by side */}
+          <div style={flexRow} className="flex-row">
+            <AnimatedSection label="Daily Inspiration" style={{ flex: 1 }} delay={200}>
+              <h2 style={sectionTitleStyle}>✨ Daily Inspiration</h2>
+              <blockquote style={{ fontSize: "1.2rem", fontStyle: "italic", color: "#6a1b9a", padding: "20px", background: "#f3e5f5", borderRadius: "15px" }}>
+                “{dailyInspiration}”
+              </blockquote>
+            </AnimatedSection>
+            <AnimatedSection label="Fun Zone" style={{ flex: 1 }} delay={250}>
+              <h2 style={sectionTitleStyle}>🎊 Fun Zone</h2>
+              <p><strong>Fun Fact:</strong> {funFact}</p>
+              <p><strong>Daily Challenge:</strong> {challenge}</p>
+              <p><strong>Quick Quote:</strong> {quotes[Math.floor(Math.random() * quotes.length)]}</p>
+            </AnimatedSection>
+          </div>
+
+          {/* Live Chat */}
+          <AnimatedSection label="Community Chat" delay={300}>
+            <h2 style={sectionTitleStyle}>💬 Live Chat</h2>
             <div
               style={{
-                maxHeight: "150px",
+                maxHeight: "250px",
                 overflowY: "auto",
-                marginBottom: "10px",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                padding: "10px",
-                backgroundColor: "#ffffff",
+                background: "#f3e5f5",
+                borderRadius: "15px",
+                padding: "20px",
+                marginBottom: "20px",
               }}
-              tabIndex="0"
             >
               {chatMessages.length === 0 ? (
-                <p>No messages yet. Start the conversation!</p>
+                <p>Start the conversation!</p>
               ) : (
                 chatMessages.map((msg, idx) => (
-                  <div key={idx} style={{ marginBottom: "8px", fontSize: "1rem" }}>
+                  <div key={idx} style={{ marginBottom: "15px" }}>
                     <strong>{msg.user}:</strong> {msg.content}
                   </div>
                 ))
               )}
             </div>
-            <form onSubmit={handleSendMessage} aria-label="Send chat message" style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+            <form onSubmit={handleSendMessage} style={{ display: "flex", gap: "15px" }}>
               <input
                 type="text"
                 value={newMessage}
                 onChange={handleInputChange}
                 placeholder="Type a message..."
-                aria-label="Type your chat message"
                 style={inputStyle}
-                autoComplete="off"
               />
-              <AnimatedButton
-                style={buttonStyle}
-                disabled={!newMessage.trim()}
-                ariaDisabled={!newMessage.trim()}
-              >
-                Send
-              </AnimatedButton>
+              <Button disabled={!newMessage.trim()} type="submit">Send</Button>
             </form>
-            {isTyping && (
-              <p aria-live="assertive" style={{ color: "#2563eb", fontSize: "0.97rem" }}>
-                Typing...
-              </p>
-            )}
-            <Link to="/chat" style={linkStyle} aria-label="Join full chat">Join Full Chat →</Link>
+            {isTyping && <p style={{ color: "#ab47bc", marginTop: "10px" }}>Typing...</p>}
+            <Link to="/chat" style={{ ...linkStyle, display: "block", marginTop: "15px" }}>Go to Full Chat →</Link>
           </AnimatedSection>
 
-          <AnimatedSection label="Recent Posts" style={sectionStyle} delay={150}>
-            <h2 style={sectionTitleStyle}>📰 Recent Posts</h2>
-            {loadingPosts ? (
-              <p style={{ fontSize: "1.01rem" }}>Loading...</p>
-            ) : posts.length === 0 ? (
-              <p style={{ fontSize: "1.01rem" }}>
-                No posts yet. <Link to="/create" style={linkStyle}>Create the first post</Link>
-              </p>
-            ) : (
-              <div style={flexRowWrap}>
-                {posts.map((p) => (
-                  <article key={p._id} style={postStyle}>
-                    <h3 style={postTitleStyle}>{p.title}</h3>
-                    <p style={postAuthorStyle}>{p.author?.username && `by ${p.author.username}`}</p>
-                    <p style={postContentStyle}>{p.content.slice(0, 70)}...</p>
-                    <AnimatedButton
-                      style={deleteButtonStyle}
-                      onClick={() => handleDeletePost(p._id)}
-                      ariaLabel={`Delete post titled ${p.title}`}
-                    >
-                      Delete
-                    </AnimatedButton>
-                  </article>
-                ))}
-              </div>
-            )}
-            <Link to="/feed" style={linkStyle} aria-label="View all posts">View All Posts →</Link>
-          </AnimatedSection>
-
-          <AnimatedSection label="Support Groups" style={sectionStyle} delay={190}>
-            <h2 style={sectionTitleStyle}>🤝 Support Groups</h2>
-            {groups.length === 0 ? (
-              <p style={{ fontSize: "0.98rem" }}>
-                No groups yet. <Link to="/support-groups" style={linkStyle}>Browse groups</Link>
-              </p>
-            ) : (
-              <ul style={{ paddingLeft: 0, listStyle: "none", marginBottom: "1em" }}>
-                {groups.map((group) => (
-                  <li key={group._id} style={{ marginBottom: "0.7em", fontSize: "0.98rem" }}>
+          {/* Recent Posts and Support Groups - Side by side */}
+          <div style={flexRow} className="flex-row">
+            <AnimatedSection label="Recent Posts" style={{ flex: 2 }} delay={350}>
+              <h2 style={sectionTitleStyle}>📝 Recent Posts</h2>
+              {loadingPosts ? (
+                <p>Loading...</p>
+              ) : posts.length === 0 ? (
+                <p>No posts yet. <Link to="/create" style={linkStyle}>Create one!</Link></p>
+              ) : (
+                posts.map((p) => (
+                  <div key={p._id} style={{ marginBottom: "20px", padding: "15px", background: "#f3e5f5", borderRadius: "15px" }}>
+                    <h3 style={{ fontSize: "1.3rem", marginBottom: "5px" }}>{p.title}</h3>
+                    <p style={{ color: "#757575" }}>By {p.author?.username}</p>
+                    <p>{p.content.slice(0, 100)}...</p>
+                    <Button onClick={() => handleDeletePost(p._id)} style={{ background: "linear-gradient(135deg, #ef5350 0%, #f44336 100%)", marginTop: "10px" }}>Delete</Button>
+                  </div>
+                ))
+              )}
+              <Link to="/feed" style={{ ...linkStyle, display: "block", marginTop: "15px" }}>See All Posts →</Link>
+            </AnimatedSection>
+            <AnimatedSection label="Support Groups" style={{ flex: 1 }} delay={400}>
+              <h2 style={sectionTitleStyle}>🤝 Groups</h2>
+              {groups.length === 0 ? (
+                <p>No groups. <Link to="/support-groups" style={linkStyle}>Explore</Link></p>
+              ) : (
+                groups.map((group) => (
+                  <div key={group._id} style={{ marginBottom: "15px" }}>
                     <strong>{group.name}</strong>
-                    <p style={{ margin: 0, color: "#4b5563" }}>{group.description?.slice(0, 90)}...</p>
+                    <p>{group.description?.slice(0, 80)}...</p>
+                  </div>
+                ))
+              )}
+              <Link to="/support-groups" style={{ ...linkStyle, display: "block", marginTop: "15px" }}>Browse Groups →</Link>
+            </AnimatedSection>
+          </div>
+
+          {/* New: Upcoming Events */}
+          <AnimatedSection label="Upcoming Events" delay={450}>
+            <h2 style={sectionTitleStyle}>🗓️ Upcoming Events</h2>
+            {events.length === 0 ? (
+              <p>No events scheduled. Check back soon!</p>
+            ) : (
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {events.map((event, idx) => (
+                  <li key={idx} style={{ marginBottom: "15px", padding: "10px", background: "#e1bee7", borderRadius: "10px" }}>
+                    <strong>{event.title}</strong> - {event.date}
                   </li>
                 ))}
               </ul>
             )}
-            <Link to="/support-groups" style={linkStyle} aria-label="Browse more groups">Browse More Groups →</Link>
           </AnimatedSection>
 
-          <AnimatedSection label="Member Milestones" style={sectionStyle} delay={220}>
-            <h2 style={sectionTitleStyle}>🎯 Member Milestones</h2>
-            <ul style={{ paddingLeft: 0, listStyle: "none", marginBottom: "1em" }}>
-              {memberMilestones.map((milestone, idx) => (
-                <li key={idx} style={{ marginBottom: "0.7em", fontSize: "0.97rem" }}>
-                  <strong>{milestone.achievement}:</strong> {milestone.description}
-                </li>
-              ))}
-            </ul>
-            <small style={{ color: "#6b7280" }}>Check your progress in your profile!</small>
-          </AnimatedSection>
+          {/* Member Milestones and Creative Prompts */}
+          <div style={flexRow} className="flex-row">
+            <AnimatedSection label="Milestones" style={{ flex: 1 }} delay={500}>
+              <h2 style={sectionTitleStyle}>🏆 Milestones</h2>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {memberMilestones.map((milestone, idx) => (
+                  <li key={idx} style={{ marginBottom: "15px" }}>
+                    <span style={{ color: "#ab47bc" }}>{milestone.achievement}:</span> {milestone.description}
+                  </li>
+                ))}
+              </ul>
+            </AnimatedSection>
+            <AnimatedSection label="Creative Spark" style={{ flex: 1 }} delay={550}>
+              <h2 style={sectionTitleStyle}>🎨 Creative Spark</h2>
+              <p style={{ fontSize: "1.2rem", marginBottom: "20px" }}>{creativePrompt}</p>
+              <Button onClick={() => setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)])}>New Prompt</Button>
+              <Link to="/create-art" style={{ ...linkStyle, marginLeft: "20px" }}>Share Creation →</Link>
+            </AnimatedSection>
+          </div>
 
-          <AnimatedSection label="Creative Prompts" style={sectionStyle} delay={260}>
-            <h2 style={sectionTitleStyle}>✍️ Creative Spark</h2>
-            <p style={{ fontSize: "1rem", marginBottom: "1em" }}>{creativePrompt}</p>
-            <AnimatedButton
-              style={buttonStyle}
-              onClick={() =>
-                setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)])
-              }
-              ariaLabel="Get new creative prompt"
-            >
-              New Prompt
-            </AnimatedButton>
-            <Link to="/create-art" style={linkStyle} aria-label="Share your creation">Share Your Creation →</Link>
-          </AnimatedSection>
-
-          <AnimatedSection label="Gratitude Wall" style={sectionStyle} delay={300}>
-            <h2 style={sectionTitleStyle}>🙏 Gratitude Wall</h2>
-            {gratitudeWall.length === 0 ? (
-              <p style={{ fontSize: "0.98rem" }}>Be the first to share gratitude!</p>
-            ) : (
-              gratitudeWall.map((note, idx) => (
-                <div key={idx} style={{ marginBottom: "0.8em", fontSize: "0.97rem" }}>
+          {/* Gratitude Wall and Virtual Pet */}
+          <div style={flexRow} className="flex-row">
+            <AnimatedSection label="Gratitude Wall" style={{ flex: 1 }} delay={600}>
+              <h2 style={sectionTitleStyle}>🙏 Gratitude Wall</h2>
+              {gratitudeWall.map((note, idx) => (
+                <div key={idx} style={{ marginBottom: "15px" }}>
                   <strong>{note.user}:</strong> {note.content}
                 </div>
-              ))
-            )}
-            <form onSubmit={handleGratitudeSubmit} aria-label="Submit gratitude note" style={{ marginTop: "1em", display: "flex", gap: "11px" }}>
-              <input
-                type="text"
-                value={gratitudeNote}
-                onChange={(e) => setGratitudeNote(e.target.value)}
-                placeholder="What are you grateful for?"
-                aria-label="Gratitude note input"
-                style={{ ...inputStyle, width: "56%" }}
-              />
-              <AnimatedButton style={buttonStyle} type="submit">Share</AnimatedButton>
-            </form>
-          </AnimatedSection>
+              ))}
+              <form onSubmit={handleGratitudeSubmit} style={{ display: "flex", gap: "15px", marginTop: "20px" }}>
+                <input
+                  type="text"
+                  value={gratitudeNote}
+                  onChange={(e) => setGratitudeNote(e.target.value)}
+                  placeholder="Share your gratitude..."
+                  style={inputStyle}
+                />
+                <Button type="submit">Share</Button>
+              </form>
+            </AnimatedSection>
+            <AnimatedSection label="Virtual Pet" style={{ flex: 1 }} delay={650}>
+              <h2 style={sectionTitleStyle}>🐶 Virtual Pet</h2>
+              <p style={{ fontSize: "2.5rem", textAlign: "center", marginBottom: "20px" }}>{petMood}</p>
+              <Button onClick={handlePetInteraction} style={{ width: "100%" }}>Play with Pet</Button>
+              <p style={{ textAlign: "center", marginTop: "10px", color: "#757575" }}>Mood changes every 10s!</p>
+            </AnimatedSection>
+          </div>
 
-          <AnimatedSection label="Virtual Pet" style={sectionStyle} delay={340}>
-            <h2 style={sectionTitleStyle}>🐾 Your Virtual Pet</h2>
-            <p style={{ fontSize: "1.02rem" }}>
-              <strong>Pet Mood:</strong> <span aria-live="polite">{petMood}</span>
-            </p>
-            <AnimatedButton
-              style={buttonStyle}
-              onClick={handlePetInteraction}
-              ariaLabel="Play with your virtual pet"
-            >
-              Play with Pet
-            </AnimatedButton>
-            <small style={{ display: "block", marginTop: "0.5em", color: "#6b7280", fontSize: "0.97rem" }}>
-              Your pet changes mood every 10 seconds!
-            </small>
-          </AnimatedSection>
-
-          <AnimatedSection label="Community Playlist" style={sectionStyle} delay={380}>
-            <h2 style={sectionTitleStyle}>🎵 Community Playlist</h2>
-            {playlistSongs.length === 0 ? (
-              <p style={{ fontSize: "0.98rem" }}>No songs yet. Add one!</p>
-            ) : (
-              <ul style={{ paddingLeft: 0, listStyle: "none", marginBottom: "0.9em", fontSize: "0.97rem" }}>
-                {playlistSongs.map((song, idx) => (
-                  <li key={idx}>
-                    <strong>{song.song}</strong> by {song.user}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <form onSubmit={handleAddSong} aria-label="Add song to playlist" style={{ marginBottom: "0.8em", display: "flex", gap: "10px" }}>
+          {/* Community Playlist */}
+          <AnimatedSection label="Community Playlist" delay={700}>
+            <h2 style={sectionTitleStyle}>🎶 Playlist</h2>
+            {playlistSongs.map((song, idx) => (
+              <div key={idx} style={{ marginBottom: "15px" }}>
+                <strong>{song.song}</strong> added by {song.user}
+              </div>
+            ))}
+            <form onSubmit={handleAddSong} style={{ display: "flex", gap: "15px", marginTop: "20px" }}>
               <input
                 type="text"
                 name="song"
-                placeholder="Add a song title..."
-                aria-label="Song title input"
-                style={{ ...inputStyle, width: "55%" }}
+                placeholder="Add a song..."
+                style={inputStyle}
               />
-              <AnimatedButton style={buttonStyle} type="submit">Add Song</AnimatedButton>
+              <Button type="submit">Add</Button>
             </form>
-            <Link to="/playlist" style={linkStyle} aria-label="View full playlist">View Full Playlist →</Link>
+            <Link to="/playlist" style={{ ...linkStyle, display: "block", marginTop: "15px" }}>Full Playlist →</Link>
           </AnimatedSection>
+
+          {/* Quick Tips and New Resources */}
+          <div style={flexRow} className="flex-row">
+            <AnimatedSection label="Quick Tips" style={{ flex: 1 }} delay={750}>
+              <h2 style={sectionTitleStyle}>💡 Quick Tips</h2>
+              <ul style={{ listStyle: "disc", paddingLeft: "20px" }}>
+                {quickTips.slice(0, 4).map((tip, i) => (
+                  <li key={i} style={{ marginBottom: "10px" }}>{tip}</li>
+                ))}
+              </ul>
+            </AnimatedSection>
+            <AnimatedSection label="Helpful Resources" style={{ flex: 1 }} delay={800}>
+              <h2 style={sectionTitleStyle}>📚 Resources</h2>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {resources.map((res, idx) => (
+                  <li key={idx} style={{ marginBottom: "15px" }}>
+                    <Link to={res.link} style={linkStyle}>{res.title}</Link>
+                  </li>
+                ))}
+              </ul>
+            </AnimatedSection>
+          </div>
         </div>
-      </div>
+      </main>
     </>
   );
 };
-
-// Animated Button with modern rounded style and hover/focus effect
-const AnimatedButton = ({ style, children, onClick, disabled, ariaDisabled, type, ariaLabel }) => {
-  const [hover, setHover] = React.useState(false);
-  const [focus, setFocus] = React.useState(false);
-
-  const combinedStyle = {
-    ...style,
-    ...(hover || focus ? {
-      backgroundColor: "#1d4ed8",
-      transform: "scale(1.04)"
-    } : {}),
-    cursor: disabled ? "not-allowed" : "pointer",
-    opacity: disabled ? 0.6 : 1,
-  };
-
-  return (
-    <button
-      aria-label={ariaLabel}
-      type={type || "button"}
-      style={combinedStyle}
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
-      aria-disabled={ariaDisabled}
-      onMouseEnter={() => !disabled && setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onFocus={() => !disabled && setFocus(true)}
-      onBlur={() => setFocus(false)}
-    >
-      {children}
-    </button>
-  );
-};
-
-// FadeUp Animated Section
-const AnimatedSection = ({ children, style, delay = 0, label }) => (
-  <section
-    aria-label={label}
-    style={{
-      ...style,
-      animationDelay: `${delay}ms`,
-      animationFillMode: "forwards",
-      animationName: "fadeUp",
-      animationDuration: "900ms",
-      animationTimingFunction: "ease-out",
-    }}
-    tabIndex="0"
-  >
-    {children}
-  </section>
-);
 
 export default Dashboard;
