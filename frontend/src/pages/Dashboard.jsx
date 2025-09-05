@@ -25,18 +25,29 @@ const Dashboard = ({ user }) => {
     "Connect with someone new this week.",
     "Write down one thing you're grateful for today."
   ]);
-  const [notifications, setNotifications] = useState([]); // New: Notifications
-  const [resources, setResources] = useState([]); // New: Helpful resources
-  const [events, setEvents] = useState([]); // New: Upcoming events
-  const [searchQuery, setSearchQuery] = useState(""); // New: Search bar
+  const [notifications, setNotifications] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dailyGoals, setDailyGoals] = useState([]);
+  const [newGoal, setNewGoal] = useState("");
+  const [wellnessScore, setWellnessScore] = useState(50);
+  const [breathingExercise, setBreathingExercise] = useState(false);
+  const [journalEntry, setJournalEntry] = useState("");
+  const [habits, setHabits] = useState([]);
+  const [newHabit, setNewHabit] = useState("");
+  const [socialMediaPosts, setSocialMediaPosts] = useState([]); // New: Social media integration
+  const [newSocialPost, setNewSocialPost] = useState("");
+  const petMoodTimeoutRef = useRef(null);
+  const breathingTimerRef = useRef(null);
 
-  // Fun arrays for different slots
+  // Fun arrays
   const funFacts = [
     "Did you know? Honey never spoils.",
     "Dolphins have names for each other!",
     "Bamboo can grow up to 3 feet in one day.",
     "There's no sound in space.",
-    "Octopuses have three hearts."
+    "Octopuses have three hearts.",
+    "Smiling can boost your mood instantly."
   ];
 
   const challenges = [
@@ -44,7 +55,8 @@ const Dashboard = ({ user }) => {
     "Post your favorite quote.",
     "Recommend a song to the community.",
     "Tell a one-line joke.",
-    "Share a self-care tip."
+    "Share a self-care tip.",
+    "Do a 1-minute meditation."
   ];
 
   const quotes = [
@@ -52,7 +64,8 @@ const Dashboard = ({ user }) => {
     "You are never too old to set another goal or to dream a new dream. – C.S. Lewis",
     "The only way to do great work is to love what you do. – Steve Jobs",
     "We rise by lifting others. – Robert Ingersoll",
-    "Be the change you wish to see in the world. – Mahatma Gandhi"
+    "Be the change you wish to see in the world. – Mahatma Gandhi",
+    "Your mind is powerful. Fill it with positive thoughts."
   ];
 
   const creativePrompts = [
@@ -60,23 +73,24 @@ const Dashboard = ({ user }) => {
     "Write a 3-sentence story about a magical encounter.",
     "Imagine a new holiday and describe how you'd celebrate it.",
     "Design a superhero inspired by your favorite hobby.",
-    "Create a poem about your favorite memory."
+    "Create a poem about your favorite memory.",
+    "Journal about what made you smile today."
   ];
 
-  const petMoods = ["happy 🐶", "playful 🐾", "cozy 😺", "curious 🐰", "adventurous 🦊"];
+  const petMoods = ["happy 🐶", "playful 🐾", "cozy 😺", "curious 🐰", "adventurous 🦊", "relaxed 🐢"];
 
   const memberMilestones = [
     { achievement: "First Post", description: "Celebrate your very first post!" },
     { achievement: "Joined 3 Groups", description: "Connect with multiple support groups." },
     { achievement: "100 Messages Sent", description: "You love to stay connected!" },
     { achievement: "1 Month Anniversary", description: "Thank you for being part of our community!" },
-    { achievement: "Helped 5 Members", description: "You're a community hero!" }
+    { achievement: "Helped 5 Members", description: "You're a community hero!" },
+    { achievement: "Completed 7 Daily Goals", description: "Building habits for life!" }
   ];
 
-  // State handlers for fun dynamic content
+  // State handlers
   const [funFact, setFunFact] = useState(funFacts[0]);
   const [challenge, setChallenge] = useState(challenges[0]);
-  const petMoodTimeoutRef = useRef(null);
 
   const playClickSound = () => {
     const audio = new Audio(
@@ -85,7 +99,7 @@ const Dashboard = ({ user }) => {
     audio.play();
   };
 
-  // Interval to update fun facts, challenges, prompts, pet moods, daily inspiration & mood
+  // Dynamic updates
   useEffect(() => {
     const interval = setInterval(() => {
       setFunFact(funFacts[Math.floor(Math.random() * funFacts.length)]);
@@ -93,9 +107,9 @@ const Dashboard = ({ user }) => {
       setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)]);
       setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]);
       setDailyInspiration(quotes[Math.floor(Math.random() * quotes.length)]);
-      setMood(["😊", "😌", "😍", "🤗", "😎", "🥳", "🌟"][Math.floor(Math.random() * 7)]);
+      setMood(["😊", "😌", "😍", "🤗", "😎", "🥳", "🌟", "💪"][Math.floor(Math.random() * 8)]);
       setQuickTips((tips) => [...tips.slice(1), tips[0]]);
-    }, 10000);
+    }, 8000);
     return () => clearInterval(interval);
   }, []);
 
@@ -103,7 +117,7 @@ const Dashboard = ({ user }) => {
     if (petMoodTimeoutRef.current) clearTimeout(petMoodTimeoutRef.current);
     petMoodTimeoutRef.current = setTimeout(() => {
       setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]);
-    }, 10000);
+    }, 8000);
     return () => clearTimeout(petMoodTimeoutRef.current);
   }, [petMood]);
 
@@ -133,24 +147,34 @@ const Dashboard = ({ user }) => {
         const playlistData = await playlistRes.json();
         setPlaylistSongs(playlistData.slice(0, 3));
 
-        // Mock new data fetches (in real app, add APIs)
         setNotifications([
           { id: 1, message: "New message from friend!", type: "message" },
           { id: 2, message: "Your post got 5 likes!", type: "like" },
           { id: 3, message: "Group event tomorrow!", type: "event" }
         ]);
 
-        setResources([
-          { title: "Mindfulness Meditation Guide", link: "/resources/meditation" },
-          { title: "Coping with Anxiety", link: "/resources/anxiety" },
-          { title: "Hotline Support Numbers", link: "/resources/hotlines" },
-          { title: "Healthy Eating Tips", link: "/resources/nutrition" }
-        ]);
-
         setEvents([
           { title: "Weekly Support Meetup", date: "Tomorrow at 7 PM" },
           { title: "Art Therapy Workshop", date: "Saturday at 2 PM" },
-          { title: "Mindfulness Session", date: "Sunday at 10 AM" }
+          { title: "Mindfulness Session", date: "Sunday at 10 AM" },
+          { title: "Yoga for Beginners", date: "Monday at 6 PM" }
+        ]);
+
+        setHabits([
+          { name: "Drink 8 glasses of water", completed: false },
+          { name: "Meditate for 10 minutes", completed: true },
+          { name: "Walk 5000 steps", completed: false }
+        ]);
+
+        setDailyGoals([
+          { goal: "Practice gratitude", completed: false },
+          { goal: "Connect with a friend", completed: true }
+        ]);
+
+        // Mock social media posts
+        setSocialMediaPosts([
+          { id: 1, platform: "X", content: "Feeling grateful today! #Mindfulness" },
+          { id: 2, platform: "Instagram", content: "Sunset vibes and self-care. 🌅 #Wellness" }
         ]);
       } catch {
         setLoadingPosts(false);
@@ -167,34 +191,26 @@ const Dashboard = ({ user }) => {
       reconnectionDelay: 2000,
     });
 
-    socket.on("connect", () => {
-      console.log("Connected to socket");
-    });
-
-    socket.on("statsUpdate", (newStats) => {
-      setStats(newStats);
-    });
-
+    socket.on("connect", () => console.log("Connected to socket"));
+    socket.on("statsUpdate", (newStats) => setStats(newStats));
     socket.on("newChatMessage", (message) => {
       setChatMessages((prev) => [...prev, message].slice(-5));
     });
-
     socket.on("newGratitudeNote", (note) => {
       setGratitudeWall((prev) => [...prev, note].slice(-5));
     });
-
-    socket.on("newNotification", (notification) => { // New: Socket for notifications
+    socket.on("newNotification", (notification) => {
       setNotifications((prev) => [...prev, notification].slice(-5));
     });
-
-    socket.on("disconnect", () => {
-      console.warn("Disconnected from socket");
+    socket.on("newSocialPost", (post) => {
+      setSocialMediaPosts((prev) => [...prev, post].slice(-5));
     });
+    socket.on("disconnect", () => console.warn("Disconnected from socket"));
 
     return () => socket.disconnect();
   }, []);
 
-  // Handlers...
+  // Handlers
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -213,20 +229,18 @@ const Dashboard = ({ user }) => {
   };
 
   const handleDeletePost = async (postId) => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    if (!window.confirm("Are you sure?")) return;
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`/api/posts/${postId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Failed to delete post");
+      if (!res.ok) throw new Error("Failed to delete");
       setPosts((prev) => prev.filter((post) => post._id !== postId));
       playClickSound();
     } catch (err) {
-      alert(err.message || "Error deleting post");
+      alert(err.message || "Error");
     }
   };
 
@@ -237,14 +251,14 @@ const Dashboard = ({ user }) => {
     socket.emit("newGratitudeNote", { user: user.username, content: gratitudeNote });
     setGratitudeNote("");
     playClickSound();
+    setWellnessScore((prev) => Math.min(100, prev + 5));
   };
 
   const handlePetInteraction = () => {
     playClickSound();
     setPetMood("❤️ Loving ❤️");
-    setTimeout(() => {
-      setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]);
-    }, 3000);
+    setTimeout(() => setPetMood(petMoods[Math.floor(Math.random() * petMoods.length)]), 3000);
+    setWellnessScore((prev) => Math.min(100, prev + 2));
   };
 
   const handleAddSong = (e) => {
@@ -264,7 +278,6 @@ const Dashboard = ({ user }) => {
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    // In real app, filter posts/groups etc. based on searchQuery
   };
 
   const handleClearNotifications = () => {
@@ -272,96 +285,165 @@ const Dashboard = ({ user }) => {
     playClickSound();
   };
 
-  // --- STYLES ---
+  const handleAddGoal = (e) => {
+    e.preventDefault();
+    if (!newGoal.trim()) return;
+    setDailyGoals((prev) => [...prev, { goal: newGoal, completed: false }]);
+    setNewGoal("");
+    playClickSound();
+    setWellnessScore((prev) => Math.min(100, prev + 3));
+  };
 
+  const handleToggleGoal = (index) => {
+    setDailyGoals((prev) => {
+      const newGoals = [...prev];
+      newGoals[index].completed = !newGoals[index].completed;
+      return newGoals;
+    });
+    playClickSound();
+    setWellnessScore((prev) => Math.min(100, prev + 5));
+  };
+
+  const handleStartBreathing = () => {
+    setBreathingExercise(true);
+    let count = 0;
+    breathingTimerRef.current = setInterval(() => {
+      count++;
+      if (count >= 10) {
+        clearInterval(breathingTimerRef.current);
+        setBreathingExercise(false);
+        setWellnessScore((prev) => Math.min(100, prev + 10));
+        alert("Great job! You completed the breathing exercise.");
+      }
+    }, 5000);
+  };
+
+  const handleJournalSubmit = (e) => {
+    e.preventDefault();
+    if (!journalEntry.trim()) return;
+    alert("Journal entry saved! Reflecting helps in the long run.");
+    setJournalEntry("");
+    playClickSound();
+    setWellnessScore((prev) => Math.min(100, prev + 7));
+  };
+
+  const handleAddHabit = (e) => {
+    e.preventDefault();
+    if (!newHabit.trim()) return;
+    setHabits((prev) => [...prev, { name: newHabit, completed: false }]);
+    setNewHabit("");
+    playClickSound();
+  };
+
+  const handleToggleHabit = (index) => {
+    setHabits((prev) => {
+      const newHabits = [...prev];
+      newHabits[index].completed = !newHabits[index].completed;
+      return newHabits;
+    });
+    playClickSound();
+    setWellnessScore((prev) => Math.min(100, prev + 4));
+  };
+
+  const handleSocialPost = (e) => {
+    e.preventDefault();
+    if (!newSocialPost.trim()) return;
+    const socket = io(SOCKET_SERVER_URL);
+    socket.emit("newSocialPost", { user: user.username, platform: "X", content: newSocialPost });
+    setNewSocialPost("");
+    playClickSound();
+    setWellnessScore((prev) => Math.min(100, prev + 3));
+  };
+
+  // Styles
   const containerStyle = {
     minHeight: "100vh",
     width: "100vw",
-    background: "linear-gradient(135deg, #f6d5f7 0%, #fbeed5 100%)", // Softer, more engaging gradient
+    background: "linear-gradient(135deg, #e6f3fa 0%, #f3e5f5 100%)", // Soothing blue to lavender gradient
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    padding: "40px 20px",
-    fontFamily: "'Poppins', sans-serif", // More modern font (assume imported or use system)
-    color: "#333",
+    padding: "50px 25px",
+    fontFamily: "'Poppins', sans-serif",
+    color: "#37474f",
     overflowX: "hidden",
   };
 
   const headerSectionStyle = {
     width: "100%",
-    maxWidth: "1200px",
+    maxWidth: "1300px",
     textAlign: "center",
-    marginBottom: "40px",
+    marginBottom: "50px",
   };
 
   const contentWrapper = {
     width: "100%",
-    maxWidth: "1200px",
+    maxWidth: "1300px",
     display: "flex",
     flexDirection: "column",
-    gap: "40px",
+    gap: "50px",
   };
 
   const sectionStyle = {
-    background: "rgba(255, 255, 255, 0.85)", // Semi-transparent for depth
-    borderRadius: "20px",
-    padding: "30px",
-    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
+    background: "rgba(255, 255, 255, 0.95)",
+    borderRadius: "25px",
+    padding: "35px",
+    boxShadow: "0 12px 35px rgba(55, 71, 79, 0.1)",
     transition: "all 0.4s ease",
     position: "relative",
     overflow: "hidden",
   };
 
   const heroStyle = {
-    background: "linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)",
-    borderRadius: "30px",
-    padding: "50px 30px",
+    background: "linear-gradient(120deg, #4fc3f7 0%, #b39ddb 100%)", // Blue to purple, calming and authentic
+    borderRadius: "35px",
+    padding: "60px 35px",
     textAlign: "center",
     color: "#fff",
-    boxShadow: "0 15px 40px rgba(0, 0, 0, 0.2)",
-    marginBottom: "50px",
+    boxShadow: "0 20px 50px rgba(55, 71, 79, 0.2)",
+    marginBottom: "60px",
   };
 
   const sectionTitleStyle = {
-    fontSize: "2rem",
+    fontSize: "2.2rem",
     fontWeight: "700",
-    marginBottom: "20px",
-    color: "#4a148c",
+    marginBottom: "25px",
+    color: "#263238",
     position: "relative",
     display: "inline-block",
   };
 
   const inputStyle = {
     width: "100%",
-    padding: "15px 20px",
+    padding: "16px 22px",
     borderRadius: "50px",
     border: "none",
-    background: "#f3e5f5",
-    fontSize: "1rem",
-    color: "#512da8",
+    background: "#eceff1",
+    fontSize: "1.1rem",
+    color: "#37474f",
     outline: "none",
     transition: "all 0.3s",
-    boxShadow: "inset 0 2px 5px rgba(0,0,0,0.05)",
+    boxShadow: "inset 0 3px 6px rgba(0,0,0,0.05)",
   };
 
   const buttonBaseStyle = {
-    background: "linear-gradient(135deg, #ab47bc 0%, #8e24aa 100%)",
+    background: "linear-gradient(135deg, #4fc3f7 0%, #0288d1 100%)",
     borderRadius: "50px",
     border: "none",
     color: "#fff",
     fontWeight: "600",
-    fontSize: "1rem",
-    padding: "12px 28px",
+    fontSize: "1.1rem",
+    padding: "14px 32px",
     cursor: "pointer",
-    boxShadow: "0 5px 15px rgba(171,71,188,0.4)",
+    boxShadow: "0 6px 18px rgba(79, 195, 247, 0.4)",
     transition: "all 0.3s ease",
     display: "inline-flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "10px",
   };
 
   const linkStyle = {
-    color: "#7b1fa2",
+    color: "#0288d1",
     fontWeight: "600",
     textDecoration: "none",
     transition: "color 0.3s",
@@ -370,18 +452,32 @@ const Dashboard = ({ user }) => {
   const flexRow = {
     display: "flex",
     flexWrap: "wrap",
-    gap: "20px",
+    gap: "25px",
     justifyContent: "space-between",
   };
 
-  // Components
+  const progressBarStyle = {
+    height: "20px",
+    background: "#eceff1",
+    borderRadius: "10px",
+    overflow: "hidden",
+    marginBottom: "20px",
+  };
 
+  const progressFillStyle = {
+    width: `${wellnessScore}%`,
+    height: "100%",
+    background: "linear-gradient(to right, #4fc3f7, #0288d1)",
+    transition: "width 0.5s ease",
+  };
+
+  // Components
   const Button = ({ style, children, onClick, disabled, ariaLabel, type }) => {
     const [hover, setHover] = React.useState(false);
     const combinedStyle = {
       ...buttonBaseStyle,
       ...style,
-      transform: hover && !disabled ? "scale(1.05)" : "scale(1)",
+      transform: hover && !disabled ? "scale(1.06)" : "scale(1)",
       opacity: disabled ? 0.7 : 1,
     };
     return (
@@ -407,8 +503,8 @@ const Dashboard = ({ user }) => {
         ...style,
         animationDelay: `${delay}ms`,
         animationFillMode: "forwards",
-        animationName: "slideIn",
-        animationDuration: "800ms",
+        animationName: "fadeSlideIn",
+        animationDuration: "900ms",
         animationTimingFunction: "ease-in-out",
       }}
       tabIndex="0"
@@ -423,51 +519,51 @@ const Dashboard = ({ user }) => {
         {`
           @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
-          @keyframes slideIn {
+          @keyframes fadeSlideIn {
             from {
               opacity: 0;
-              transform: translateX(-50px);
+              transform: translateY(30px);
             }
             to {
               opacity: 1;
-              transform: translateX(0);
+              transform: translateY(0);
             }
           }
           ::-webkit-scrollbar {
-            width: 10px;
+            width: 12px;
           }
           ::-webkit-scrollbar-track {
-            background: #f3e5f5;
-            border-radius: 5px;
+            background: #eceff1;
+            border-radius: 6px;
           }
           ::-webkit-scrollbar-thumb {
-            background-color: #7b1fa2;
-            border-radius: 5px;
+            background-color: #0288d1;
+            border-radius: 6px;
           }
-          input:focus {
-            box-shadow: 0 0 10px #ab47bc !important;
+          input:focus, textarea:focus {
+            box-shadow: 0 0 12px #4fc3f7 !important;
           }
           a:hover, a:focus {
-            color: #4a148c !important;
+            color: #01579b !important;
           }
           section:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15) !important;
+            transform: translateY(-8px);
+            box-shadow: 0 18px 50px rgba(55,71,79,0.15) !important;
           }
           @media (max-width: 768px) {
             .flex-row {
               flex-direction: column;
             }
             h1 {
-              font-size: 2.5rem !important;
+              font-size: 2.8rem !important;
             }
             section {
-              padding: 20px !important;
+              padding: 25px !important;
             }
           }
           @media (max-width: 480px) {
             main {
-              padding: 20px 10px !important;
+              padding: 25px 12px !important;
             }
           }
         `}
@@ -475,156 +571,246 @@ const Dashboard = ({ user }) => {
       <main style={containerStyle} role="main">
         <div style={headerSectionStyle}>
           <div style={heroStyle}>
-            <h1 style={{ fontSize: "3.5rem", marginBottom: "10px", textShadow: "0 2px 4px rgba(0,0,0,0.2)" }}>
-              Welcome Back, {user?.username || user}! {mood}
+            <h1 style={{ fontSize: "4rem", marginBottom: "15px", textShadow: "0 3px 6px rgba(0,0,0,0.2)" }}>
+              Hello, {user?.username || user}! Let's Thrive Today {mood}
             </h1>
-            <p style={{ fontSize: "1.4rem", marginBottom: "30px" }}>Discover inspiration, connect with others, and nurture your well-being.</p>
+            <p style={{ fontSize: "1.5rem", marginBottom: "35px" }}>A sanctuary for growth, connection, and lasting well-being.</p>
             <input
               type="text"
               value={searchQuery}
               onChange={handleSearch}
-              placeholder="Search posts, groups, or resources..."
-              style={{ ...inputStyle, maxWidth: "600px", margin: "0 auto 20px", display: "block" }}
+              placeholder="Search for inspiration, groups, or tools..."
+              style={{ ...inputStyle, maxWidth: "700px", margin: "0 auto 25px", display: "block" }}
             />
-            <Button onClick={() => alert('Search functionality coming soon!')}>Search</Button>
+            <Button onClick={() => alert('Searching... (Implement filter logic)')}>Find Your Path</Button>
           </div>
         </div>
         <div style={contentWrapper}>
+          {/* Wellness Score */}
+          <AnimatedSection label="Wellness Journey" delay={0}>
+            <h2 style={sectionTitleStyle}>🌟 Your Wellness Score</h2>
+            <p>Track your progress with daily actions for lasting growth.</p>
+            <div style={progressBarStyle}>
+              <div style={progressFillStyle}></div>
+            </div>
+            <p style={{ textAlign: "center", fontSize: "1.8rem", fontWeight: "bold" }}>{wellnessScore}/100</p>
+            <p>Small steps today lead to big changes tomorrow.</p>
+          </AnimatedSection>
+
           {/* Notifications */}
-          <AnimatedSection label="Notifications" delay={0}>
-            <h2 style={sectionTitleStyle}>🔔 Notifications</h2>
+          <AnimatedSection label="Notifications" delay={50}>
+            <h2 style={sectionTitleStyle}>🔔 Updates</h2>
             {notifications.length === 0 ? (
-              <p>No new notifications. You're all caught up!</p>
+              <p>You're all caught up! Focus on your journey.</p>
             ) : (
               <>
                 <ul style={{ listStyle: "none", padding: 0 }}>
                   {notifications.map((notif) => (
-                    <li key={notif.id} style={{ marginBottom: "15px", padding: "10px", background: "#f3e5f5", borderRadius: "10px" }}>
+                    <li key={notif.id} style={{ marginBottom: "18px", padding: "12px", background: "#eceff1", borderRadius: "12px" }}>
                       {notif.message}
                     </li>
                   ))}
                 </ul>
-                <Button onClick={handleClearNotifications} style={{ marginTop: "10px" }}>Clear All</Button>
+                <Button onClick={handleClearNotifications} style={{ marginTop: "15px" }}>Clear</Button>
               </>
             )}
           </AnimatedSection>
 
-          {/* Stats and Mood Tracker - Combined for flow */}
+          {/* Social Media Tools */}
+          <AnimatedSection label="Social Media Sharing" delay={100}>
+            <h2 style={sectionTitleStyle}>📱 Share Positivity</h2>
+            <p>Spread inspiration on X or Instagram with a positive post!</p>
+            <form onSubmit={handleSocialPost} style={{ display: "flex", gap: "18px", marginBottom: "25px" }}>
+              <input
+                type="text"
+                value={newSocialPost}
+                onChange={(e) => setNewSocialPost(e.target.value)}
+                placeholder="Share a positive message... (e.g., #Mindfulness)"
+                style={inputStyle}
+              />
+              <Button type="submit">Post to X</Button>
+            </form>
+            {socialMediaPosts.length === 0 ? (
+              <p>Be the first to share positivity!</p>
+            ) : (
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {socialMediaPosts.map((post) => (
+                  <li key={post.id} style={{ marginBottom: "18px", padding: "12px", background: "#e3f2fd", borderRadius: "12px" }}>
+                    <strong>{post.platform}:</strong> {post.content} by {post.user}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </AnimatedSection>
+
+          {/* Daily Goals and Habits */}
           <div style={flexRow} className="flex-row">
-            <AnimatedSection label="Community Stats" style={{ flex: 1 }} delay={100}>
-              <h2 style={sectionTitleStyle}>📊 Community Stats</h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "15px" }}>
-                <div style={{ textAlign: "center", padding: "15px", background: "#e1bee7", borderRadius: "15px" }}>Posts: {stats.posts}</div>
-                <div style={{ textAlign: "center", padding: "15px", background: "#e1bee7", borderRadius: "15px" }}>Groups: {stats.groups}</div>
-                <div style={{ textAlign: "center", padding: "15px", background: "#e1bee7", borderRadius: "15px" }}>Members: {stats.members}</div>
-                <div style={{ textAlign: "center", padding: "15px", background: "#e1bee7", borderRadius: "15px" }}>Active Today: {stats.activeToday}</div>
-              </div>
+            <AnimatedSection label="Daily Goals" style={{ flex: 1 }} delay={150}>
+              <h2 style={sectionTitleStyle}>🎯 Daily Goals</h2>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {dailyGoals.map((goal, idx) => (
+                  <li key={idx} style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <input type="checkbox" checked={goal.completed} onChange={() => handleToggleGoal(idx)} />
+                    {goal.goal}
+                  </li>
+                ))}
+              </ul>
+              <form onSubmit={handleAddGoal} style={{ display: "flex", gap: "15px", marginTop: "20px" }}>
+                <input
+                  type="text"
+                  value={newGoal}
+                  onChange={(e) => setNewGoal(e.target.value)}
+                  placeholder="Add a goal for today..."
+                  style={inputStyle}
+                />
+                <Button type="submit">Add</Button>
+              </form>
+              <p style={{ marginTop: "15px", color: "#37474f" }}>Build habits one day at a time.</p>
             </AnimatedSection>
-            <AnimatedSection label="Mood Tracker" style={{ flex: 1 }} delay={150}>
-              <h2 style={sectionTitleStyle}>🌈 Mood Tracker</h2>
-              <p style={{ fontSize: "2rem", textAlign: "center", marginBottom: "20px" }}>{petMood}</p>
-              <Button onClick={() => setMood("🤩")} style={{ width: "100%" }}>Boost My Mood</Button>
+            <AnimatedSection label="Habit Tracker" style={{ flex: 1 }} delay={200}>
+              <h2 style={sectionTitleStyle}>🔄 Habit Tracker</h2>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {habits.map((habit, idx) => (
+                  <li key={idx} style={{ marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <input type="checkbox" checked={habit.completed} onChange={() => handleToggleHabit(idx)} />
+                    {habit.name}
+                  </li>
+                ))}
+              </ul>
+              <form onSubmit={handleAddHabit} style={{ display: "flex", gap: "15px", marginTop: "20px" }}>
+                <input
+                  type="text"
+                  value={newHabit}
+                  onChange={(e) => setNewHabit(e.target.value)}
+                  placeholder="Add a new habit..."
+                  style={inputStyle}
+                />
+                <Button type="submit">Add</Button>
+              </form>
+              <p style={{ marginTop: "15px", color: "#37474f" }}>Consistency is key to growth.</p>
             </AnimatedSection>
           </div>
 
-          {/* Daily Inspiration and Fun Zone - Side by side */}
+          {/* Breathing Exercise and Journaling */}
           <div style={flexRow} className="flex-row">
-            <AnimatedSection label="Daily Inspiration" style={{ flex: 1 }} delay={200}>
-              <h2 style={sectionTitleStyle}>✨ Daily Inspiration</h2>
-              <blockquote style={{ fontSize: "1.2rem", fontStyle: "italic", color: "#6a1b9a", padding: "20px", background: "#f3e5f5", borderRadius: "15px" }}>
+            <AnimatedSection label="Breathing Exercise" style={{ flex: 1 }} delay={250}>
+              <h2 style={sectionTitleStyle}>🌬️ Breathing Exercise</h2>
+              <p>Take a moment to reduce stress with deep breathing.</p>
+              {breathingExercise ? (
+                <p style={{ fontSize: "1.5rem", textAlign: "center", animation: "breathe 5s infinite" }}>Inhale... Hold... Exhale...</p>
+              ) : (
+                <Button onClick={handleStartBreathing} style={{ width: "100%" }}>Start 1-Min Exercise</Button>
+              )}
+              <style>{`
+                @keyframes breathe {
+                  0% { transform: scale(1); }
+                  50% { transform: scale(1.1); }
+                  100% { transform: scale(1); }
+                }
+              `}</style>
+            </AnimatedSection>
+            <AnimatedSection label="Daily Journal" style={{ flex: 1 }} delay={300}>
+              <h2 style={sectionTitleStyle}>📖 Daily Reflection</h2>
+              <form onSubmit={handleJournalSubmit}>
+                <textarea
+                  value={journalEntry}
+                  onChange={(e) => setJournalEntry(e.target.value)}
+                  placeholder="Reflect on your day... What went well?"
+                  style={{ ...inputStyle, height: "120px", resize: "none" }}
+                />
+                <Button type="submit" style={{ marginTop: "15px", width: "100%" }}>Save Entry</Button>
+              </form>
+              <p style={{ marginTop: "15px", color: "#37474f" }}>Reflecting builds self-awareness.</p>
+            </AnimatedSection>
+          </div>
+
+          {/* Stats and Mood Booster */}
+          <div style={flexRow} className="flex-row">
+            <AnimatedSection label="Community Stats" style={{ flex: 1 }} delay={350}>
+              <h2 style={sectionTitleStyle}>📊 Stats</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "18px" }}>
+                <div style={{ textAlign: "center", padding: "18px", background: "#e3f2fd", borderRadius: "18px" }}>Posts: {stats.posts}</div>
+                <div style={{ textAlign: "center", padding: "18px", background: "#e3f2fd", borderRadius: "18px" }}>Groups: {stats.groups}</div>
+                <div style={{ textAlign: "center", padding: "18px", background: "#e3f2fd", borderRadius: "18px" }}>Members: {stats.members}</div>
+                <div style={{ textAlign: "center", padding: "18px", background: "#e3f2fd", borderRadius: "18px" }}>Active: {stats.activeToday}</div>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection label="Mood Booster" style={{ flex: 1 }} delay={400}>
+              <h2 style={sectionTitleStyle}>😊 Mood Booster</h2>
+              <p style={{ fontSize: "2.2rem", textAlign: "center", marginBottom: "25px" }}>{petMood}</p>
+              <Button onClick={() => setMood("🤩")} style={{ width: "100%" }}>Instant Boost</Button>
+            </AnimatedSection>
+          </div>
+
+          {/* Inspiration and Fun Zone */}
+          <div style={flexRow} className="flex-row">
+            <AnimatedSection label="Inspiration" style={{ flex: 1 }} delay={450}>
+              <h2 style={sectionTitleStyle}>✨ Inspiration</h2>
+              <blockquote style={{ fontSize: "1.3rem", fontStyle: "italic", color: "#263238", padding: "25px", background: "#e3f2fd", borderRadius: "18px" }}>
                 “{dailyInspiration}”
               </blockquote>
             </AnimatedSection>
-            <AnimatedSection label="Fun Zone" style={{ flex: 1 }} delay={250}>
-              <h2 style={sectionTitleStyle}>🎊 Fun Zone</h2>
-              <p><strong>Fun Fact:</strong> {funFact}</p>
-              <p><strong>Daily Challenge:</strong> {challenge}</p>
-              <p><strong>Quick Quote:</strong> {quotes[Math.floor(Math.random() * quotes.length)]}</p>
+            <AnimatedSection label="Fun Zone" style={{ flex: 1 }} delay={500}>
+              <h2 style={sectionTitleStyle}>🎉 Fun Zone</h2>
+              <p><strong>Fact:</strong> {funFact}</p>
+              <p><strong>Challenge:</strong> {challenge}</p>
+              <p><strong>Quote:</strong> {quotes[Math.floor(Math.random() * quotes.length)]}</p>
             </AnimatedSection>
           </div>
 
-          {/* Live Chat */}
-          <AnimatedSection label="Community Chat" delay={300}>
-            <h2 style={sectionTitleStyle}>💬 Live Chat</h2>
-            <div
-              style={{
-                maxHeight: "250px",
-                overflowY: "auto",
-                background: "#f3e5f5",
-                borderRadius: "15px",
-                padding: "20px",
-                marginBottom: "20px",
-              }}
-            >
-              {chatMessages.length === 0 ? (
-                <p>Start the conversation!</p>
-              ) : (
-                chatMessages.map((msg, idx) => (
-                  <div key={idx} style={{ marginBottom: "15px" }}>
-                    <strong>{msg.user}:</strong> {msg.content}
-                  </div>
-                ))
-              )}
+          {/* Chat */}
+          <AnimatedSection label="Chat" delay={550}>
+            <h2 style={sectionTitleStyle}>💬 Community Chat</h2>
+            <div style={{ maxHeight: "280px", overflowY: "auto", background: "#e3f2fd", borderRadius: "18px", padding: "25px", marginBottom: "25px" }}>
+              {chatMessages.length === 0 ? <p>Chat to connect and support!</p> : chatMessages.map((msg, idx) => (
+                <div key={idx} style={{ marginBottom: "18px" }}>
+                  <strong>{msg.user}:</strong> {msg.content}
+                </div>
+              ))}
             </div>
-            <form onSubmit={handleSendMessage} style={{ display: "flex", gap: "15px" }}>
-              <input
-                type="text"
-                value={newMessage}
-                onChange={handleInputChange}
-                placeholder="Type a message..."
-                style={inputStyle}
-              />
+            <form onSubmit={handleSendMessage} style={{ display: "flex", gap: "18px" }}>
+              <input type="text" value={newMessage} onChange={handleInputChange} placeholder="Share your thoughts..." style={inputStyle} />
               <Button disabled={!newMessage.trim()} type="submit">Send</Button>
             </form>
-            {isTyping && <p style={{ color: "#ab47bc", marginTop: "10px" }}>Typing...</p>}
-            <Link to="/chat" style={{ ...linkStyle, display: "block", marginTop: "15px" }}>Go to Full Chat →</Link>
+            {isTyping && <p style={{ color: "#4fc3f7", marginTop: "12px" }}>Typing...</p>}
+            <Link to="/chat" style={{ ...linkStyle, display: "block", marginTop: "18px" }}>Full Chat →</Link>
           </AnimatedSection>
 
-          {/* Recent Posts and Support Groups - Side by side */}
+          {/* Posts and Groups */}
           <div style={flexRow} className="flex-row">
-            <AnimatedSection label="Recent Posts" style={{ flex: 2 }} delay={350}>
-              <h2 style={sectionTitleStyle}>📝 Recent Posts</h2>
-              {loadingPosts ? (
-                <p>Loading...</p>
-              ) : posts.length === 0 ? (
-                <p>No posts yet. <Link to="/create" style={linkStyle}>Create one!</Link></p>
-              ) : (
-                posts.map((p) => (
-                  <div key={p._id} style={{ marginBottom: "20px", padding: "15px", background: "#f3e5f5", borderRadius: "15px" }}>
-                    <h3 style={{ fontSize: "1.3rem", marginBottom: "5px" }}>{p.title}</h3>
-                    <p style={{ color: "#757575" }}>By {p.author?.username}</p>
-                    <p>{p.content.slice(0, 100)}...</p>
-                    <Button onClick={() => handleDeletePost(p._id)} style={{ background: "linear-gradient(135deg, #ef5350 0%, #f44336 100%)", marginTop: "10px" }}>Delete</Button>
-                  </div>
-                ))
-              )}
-              <Link to="/feed" style={{ ...linkStyle, display: "block", marginTop: "15px" }}>See All Posts →</Link>
+            <AnimatedSection label="Posts" style={{ flex: 2 }} delay={600}>
+              <h2 style={sectionTitleStyle}>📰 Recent Posts</h2>
+              {loadingPosts ? <p>Loading...</p> : posts.length === 0 ? (
+                <p>Create a post to inspire! <Link to="/create" style={linkStyle}>Start Now</Link></p>
+              ) : posts.map((p) => (
+                <div key={p._id} style={{ marginBottom: "25px", padding: "18px", background: "#e3f2fd", borderRadius: "18px" }}>
+                  <h3 style={{ fontSize: "1.4rem", marginBottom: "8px" }}>{p.title}</h3>
+                  <p style={{ color: "#78909c" }}>By {p.author?.username}</p>
+                  <p>{p.content.slice(0, 120)}...</p>
+                  <Button onClick={() => handleDeletePost(p._id)} style={{ background: "linear-gradient(135deg, #ef5350 0%, #f44336 100%)", marginTop: "12px" }}>Delete</Button>
+                </div>
+              ))}
+              <Link to="/feed" style={{ ...linkStyle, display: "block", marginTop: "18px" }}>All Posts →</Link>
             </AnimatedSection>
-            <AnimatedSection label="Support Groups" style={{ flex: 1 }} delay={400}>
-              <h2 style={sectionTitleStyle}>🤝 Groups</h2>
-              {groups.length === 0 ? (
-                <p>No groups. <Link to="/support-groups" style={linkStyle}>Explore</Link></p>
-              ) : (
-                groups.map((group) => (
-                  <div key={group._id} style={{ marginBottom: "15px" }}>
-                    <strong>{group.name}</strong>
-                    <p>{group.description?.slice(0, 80)}...</p>
-                  </div>
-                ))
-              )}
-              <Link to="/support-groups" style={{ ...linkStyle, display: "block", marginTop: "15px" }}>Browse Groups →</Link>
+            <AnimatedSection label="Groups" style={{ flex: 1 }} delay={650}>
+              <h2 style={sectionTitleStyle}>🤝 Support Groups</h2>
+              {groups.length === 0 ? <p>Explore groups for connection. <Link to="/support-groups" style={linkStyle}>Browse</Link></p> : groups.map((group) => (
+                <div key={group._id} style={{ marginBottom: "18px" }}>
+                  <strong>{group.name}</strong>
+                  <p>{group.description?.slice(0, 100)}...</p>
+                </div>
+              ))}
+              <Link to="/support-groups" style={{ ...linkStyle, display: "block", marginTop: "18px" }}>More Groups →</Link>
             </AnimatedSection>
           </div>
 
-          {/* New: Upcoming Events */}
-          <AnimatedSection label="Upcoming Events" delay={450}>
+          {/* Events */}
+          <AnimatedSection label="Events" delay={700}>
             <h2 style={sectionTitleStyle}>🗓️ Upcoming Events</h2>
-            {events.length === 0 ? (
-              <p>No events scheduled. Check back soon!</p>
-            ) : (
+            {events.length === 0 ? <p>No events yet – suggest one!</p> : (
               <ul style={{ listStyle: "none", padding: 0 }}>
                 {events.map((event, idx) => (
-                  <li key={idx} style={{ marginBottom: "15px", padding: "10px", background: "#e1bee7", borderRadius: "10px" }}>
+                  <li key={idx} style={{ marginBottom: "18px", padding: "12px", background: "#e3f2fd", borderRadius: "12px" }}>
                     <strong>{event.title}</strong> - {event.date}
                   </li>
                 ))}
@@ -632,95 +818,72 @@ const Dashboard = ({ user }) => {
             )}
           </AnimatedSection>
 
-          {/* Member Milestones and Creative Prompts */}
+          {/* Milestones and Creative */}
           <div style={flexRow} className="flex-row">
-            <AnimatedSection label="Milestones" style={{ flex: 1 }} delay={500}>
-              <h2 style={sectionTitleStyle}>🏆 Milestones</h2>
+            <AnimatedSection label="Milestones" style={{ flex: 1 }} delay={750}>
+              <h2 style={sectionTitleStyle}>🏆 Your Milestones</h2>
               <ul style={{ listStyle: "none", padding: 0 }}>
                 {memberMilestones.map((milestone, idx) => (
-                  <li key={idx} style={{ marginBottom: "15px" }}>
-                    <span style={{ color: "#ab47bc" }}>{milestone.achievement}:</span> {milestone.description}
+                  <li key={idx} style={{ marginBottom: "18px" }}>
+                    <span style={{ color: "#4fc3f7" }}>{milestone.achievement}:</span> {milestone.description}
                   </li>
                 ))}
               </ul>
             </AnimatedSection>
-            <AnimatedSection label="Creative Spark" style={{ flex: 1 }} delay={550}>
-              <h2 style={sectionTitleStyle}>🎨 Creative Spark</h2>
-              <p style={{ fontSize: "1.2rem", marginBottom: "20px" }}>{creativePrompt}</p>
-              <Button onClick={() => setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)])}>New Prompt</Button>
-              <Link to="/create-art" style={{ ...linkStyle, marginLeft: "20px" }}>Share Creation →</Link>
+            <AnimatedSection label="Creative" style={{ flex: 1 }} delay={800}>
+              <h2 style={sectionTitleStyle}>🎨 Creative Prompt</h2>
+              <p style={{ fontSize: "1.3rem", marginBottom: "25px" }}>{creativePrompt}</p>
+              <Button onClick={() => setCreativePrompt(creativePrompts[Math.floor(Math.random() * creativePrompts.length)])}>Refresh</Button>
+              <Link to="/create-art" style={{ ...linkStyle, marginLeft: "25px" }}>Share →</Link>
             </AnimatedSection>
           </div>
 
-          {/* Gratitude Wall and Virtual Pet */}
+          {/* Gratitude and Pet */}
           <div style={flexRow} className="flex-row">
-            <AnimatedSection label="Gratitude Wall" style={{ flex: 1 }} delay={600}>
+            <AnimatedSection label="Gratitude" style={{ flex: 1 }} delay={850}>
               <h2 style={sectionTitleStyle}>🙏 Gratitude Wall</h2>
               {gratitudeWall.map((note, idx) => (
-                <div key={idx} style={{ marginBottom: "15px" }}>
+                <div key={idx} style={{ marginBottom: "18px" }}>
                   <strong>{note.user}:</strong> {note.content}
                 </div>
               ))}
-              <form onSubmit={handleGratitudeSubmit} style={{ display: "flex", gap: "15px", marginTop: "20px" }}>
-                <input
-                  type="text"
-                  value={gratitudeNote}
-                  onChange={(e) => setGratitudeNote(e.target.value)}
-                  placeholder="Share your gratitude..."
-                  style={inputStyle}
-                />
+              <form onSubmit={handleGratitudeSubmit} style={{ display: "flex", gap: "18px", marginTop: "25px" }}>
+                <input type="text" value={gratitudeNote} onChange={(e) => setGratitudeNote(e.target.value)} placeholder="What are you grateful for?" style={inputStyle} />
                 <Button type="submit">Share</Button>
               </form>
             </AnimatedSection>
-            <AnimatedSection label="Virtual Pet" style={{ flex: 1 }} delay={650}>
-              <h2 style={sectionTitleStyle}>🐶 Virtual Pet</h2>
-              <p style={{ fontSize: "2.5rem", textAlign: "center", marginBottom: "20px" }}>{petMood}</p>
-              <Button onClick={handlePetInteraction} style={{ width: "100%" }}>Play with Pet</Button>
-              <p style={{ textAlign: "center", marginTop: "10px", color: "#757575" }}>Mood changes every 10s!</p>
+            <AnimatedSection label="Pet" style={{ flex: 1 }} delay={900}>
+              <h2 style={sectionTitleStyle}>🐾 Virtual Pet</h2>
+              <p style={{ fontSize: "2.8rem", textAlign: "center", marginBottom: "25px" }}>{petMood}</p>
+              <Button onClick={handlePetInteraction} style={{ width: "100%" }}>Interact</Button>
+              <p style={{ textAlign: "center", marginTop: "12px", color: "#78909c" }}>A fun way to lift your spirits!</p>
             </AnimatedSection>
           </div>
 
-          {/* Community Playlist */}
-          <AnimatedSection label="Community Playlist" delay={700}>
-            <h2 style={sectionTitleStyle}>🎶 Playlist</h2>
+          {/* Playlist */}
+          <AnimatedSection label="Playlist" delay={950}>
+            <h2 style={sectionTitleStyle}>🎵 Community Playlist</h2>
             {playlistSongs.map((song, idx) => (
-              <div key={idx} style={{ marginBottom: "15px" }}>
-                <strong>{song.song}</strong> added by {song.user}
+              <div key={idx} style={{ marginBottom: "18px" }}>
+                <strong>{song.song}</strong> by {song.user}
               </div>
             ))}
-            <form onSubmit={handleAddSong} style={{ display: "flex", gap: "15px", marginTop: "20px" }}>
-              <input
-                type="text"
-                name="song"
-                placeholder="Add a song..."
-                style={inputStyle}
-              />
+            <form onSubmit={handleAddSong} style={{ display: "flex", gap: "18px", marginTop: "25px" }}>
+              <input type="text" name="song" placeholder="Suggest a soothing song..." style={inputStyle} />
               <Button type="submit">Add</Button>
             </form>
-            <Link to="/playlist" style={{ ...linkStyle, display: "block", marginTop: "15px" }}>Full Playlist →</Link>
+            <Link to="/playlist" style={{ ...linkStyle, display: "block", marginTop: "18px" }}>Full Playlist →</Link>
           </AnimatedSection>
 
-          {/* Quick Tips and New Resources */}
-          <div style={flexRow} className="flex-row">
-            <AnimatedSection label="Quick Tips" style={{ flex: 1 }} delay={750}>
-              <h2 style={sectionTitleStyle}>💡 Quick Tips</h2>
-              <ul style={{ listStyle: "disc", paddingLeft: "20px" }}>
-                {quickTips.slice(0, 4).map((tip, i) => (
-                  <li key={i} style={{ marginBottom: "10px" }}>{tip}</li>
-                ))}
-              </ul>
-            </AnimatedSection>
-            <AnimatedSection label="Helpful Resources" style={{ flex: 1 }} delay={800}>
-              <h2 style={sectionTitleStyle}>📚 Resources</h2>
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                {resources.map((res, idx) => (
-                  <li key={idx} style={{ marginBottom: "15px" }}>
-                    <Link to={res.link} style={linkStyle}>{res.title}</Link>
-                  </li>
-                ))}
-              </ul>
-            </AnimatedSection>
-          </div>
+          {/* Tips */}
+          <AnimatedSection label="Tips" delay={1000}>
+            <h2 style={sectionTitleStyle}>💡 Daily Tips</h2>
+            <ul style={{ listStyle: "disc", paddingLeft: "25px" }}>
+              {quickTips.slice(0, 5).map((tip, i) => (
+                <li key={i} style={{ marginBottom: "12px" }}>{tip}</li>
+              ))}
+            </ul>
+          </AnimatedSection>
         </div>
       </main>
     </>
@@ -728,3 +891,4 @@ const Dashboard = ({ user }) => {
 };
 
 export default Dashboard;
+
