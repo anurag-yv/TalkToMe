@@ -68,6 +68,7 @@ async function getBitcoinAnswerFromAPI(userMessage) {
   }
 }
 
+
 // Stats update helper
 async function emitUpdatedStats() {
   try {
