@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
+const apiRoutes = require('./routes/api'); // Add new routes file
 
 require('dotenv').config();
 
@@ -11,12 +12,15 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
 const Post = require('./models/Post');
 const Group = require('./models/Group');
 const User = require('./models/User');
+const Vibe = require('./models/Vibe'); // Add Vibe model
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api', apiRoutes); // Mount new API routes
+
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB connected'))
@@ -68,7 +72,6 @@ async function getBitcoinAnswerFromAPI(userMessage) {
   }
 }
 
-
 // Stats update helper
 async function emitUpdatedStats() {
   try {
@@ -78,22 +81,31 @@ async function emitUpdatedStats() {
     const activeTodayCount = await User.countDocuments({
       lastActive: { $gte: new Date().setHours(0, 0, 0, 0) }
     });
+    const vibeCount = await Vibe.countDocuments(); // Add vibe count
 
     io.emit('statsUpdate', {
       posts: postCount,
       groups: groupCount,
       members: memberCount,
-      activeToday: activeTodayCount
+      activeToday: activeTodayCount,
+      vibes: vibeCount, // Include vibes in stats
     });
   } catch (err) {
     console.error('Error emitting stats:', err);
   }
 }
 
-// Socket.IO chat handling
+// Socket.IO handling
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
+  // Handle join event for username
+  socket.on('join', (username) => {
+    socket.username = username; // Store username on socket
+    io.emit('userList', Array.from(io.sockets.sockets.values()).map(s => s.username).filter(Boolean));
+  });
+
+  // Handle chat messages
   socket.on('chatMessage', async (msg) => {
     let userMessage = typeof msg === "string" ? msg : msg.message;
     if (!userMessage || typeof userMessage !== "string") return;
@@ -125,8 +137,29 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle new vibe
+  socket.on('newVibe', async (vibe) => {
+    try {
+      const newVibe = new Vibe({
+        user: vibe.user,
+        content: vibe.content,
+      });
+      await newVibe.save();
+      io.emit('newVibe', {
+        id: newVibe._id,
+        user: vibe.user,
+        content: vibe.content,
+        createdAt: newVibe.createdAt,
+      });
+      emitUpdatedStats(); // Update stats after new vibe
+    } catch (err) {
+      console.error('Error saving vibe:', err);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
+    io.emit('userList', Array.from(io.sockets.sockets.values()).map(s => s.username).filter(Boolean));
   });
 });
 
